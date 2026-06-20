@@ -18,3 +18,7 @@ export function useIsMobile(breakpoint: number = 768): boolean {
 
   return isMobile;
 }
+
+// Esta hook ya no es de utilidad, ya que se eliminaran los componentes responsivos y se adaptaran 
+// los componentes para que sean responsivos por si mismos, eliminando la necesidad de esta diferenciación.
+// De todas formas se mantendra este hook hasta terminar con la sección de empleadores, para evitar errores en el proceso de edición.

@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useIsMobile } from './hooks/useIsMobile';
 
-// Postulantes Desktop
+// Componentes Postulantes
 import LoginPostulante from './components/postulantes/LoginPostulante';
 import DashboardPostulante from './components/postulantes/DashboardPostulante';
 import PerfilProfesional from './components/postulantes/PerfilProfesional';
@@ -13,7 +13,7 @@ import ChatMensajes from './components/postulantes/ChatMensajes';
 import CalificacionesPostulante from './components/postulantes/CalificacionesOpiniones';
 import NotificacionesPostulantes from './components/postulantes/Notificaciones';
 
-// Empleadores Desktop
+// Componentes Empleadores
 import LoginEmpleador from './components/empleadores/LoginEmpleador';
 import DashboardEmpleador from './components/empleadores/DashboardEmpleador';
 import MiNegocio from './components/empleadores/MiNegocio';
@@ -27,7 +27,7 @@ import ChatEmpresarial from './components/empleadores/ChatEmpresarial';
 import CalificacionesEmpleador from './components/empleadores/CalificacionesEmpleador';
 import NotificacionesEmpleador from './components/empleadores/NotificacionesEmpleador';
 
-// Empleadores Mobile
+// Eliminar conforme se editen los componentes para que sean responsivos, ya que no se necesita esta diferenciación
 import LoginEmpleadorMobile from './components/empleadores/LoginEmpleadorMobile';
 import DashboardEmpleadorMobile from './components/empleadores/DashboardEmpleadorMobile';
 import CrearVacanteMobile from './components/empleadores/CrearVacanteMobile';
@@ -43,7 +43,7 @@ import ChatEmpresarialMobile from './components/empleadores/ChatEmpresarialMobil
 import RoleSelector from './components/shared/RoleSelector';
 import StyleGuideline from './components/shared/StyleGuideline';
 
-// Responsive Wrappers
+// Todas estas funciones seran eliminadas ya que no cumplen con el principio DRY, renderizan componentes diferentes
 function ResponsiveLoginEmpleador() {
   const isMobile = useIsMobile();
   return isMobile ? <LoginEmpleadorMobile /> : <LoginEmpleador />;
@@ -74,8 +74,6 @@ function ResponsiveChatEmpleador() {
   return isMobile ? <ChatEmpresarialMobile /> : <ChatEmpresarial />;
 }
 
-// se elimino el responsive de seleccion de rol
-
 function ResponsiveGestionVacantes() {
   const isMobile = useIsMobile();
   return isMobile ? <GestionVacantesMobile /> : <GestionVacantes />;
@@ -101,6 +99,11 @@ function ResponsiveNotificacionesEmpleador() {
   return isMobile ? <NotificacionesEmpleadorMobile /> : <NotificacionesEmpleador />;
 }
 
+/* 
+Este bloque de codigo se encarga de definir las rutas de la aplicación utilizando React Router. 
+Se incluyen rutas para los postulantes y empleadores, así como una ruta para el selector de rol y la guía de estilo. 
+Para las rutas de empleadores, se utilizan componentes responsivos que renderizan diferentes versiones según el tamaño de pantalla del dispositivo. 
+*/
 export default function App() {
   return (
     <div className="min-h-screen bg-background">
