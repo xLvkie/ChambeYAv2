@@ -26,16 +26,16 @@ export default function DashboardEmpleador() {
 
   return (
     <LayoutEmpleador>
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Dashboard Empresarial</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Dashboard Empresarial</h1>
             <p className="text-lg text-muted-foreground mt-1">Panel de control de reclutamiento</p>
           </div>
           <button
             onClick={() => navigate('/empleador/crear-vacante')}
-            className="flex items-center gap-2 px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium transition-colors"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium transition-colors"
           >
             <Plus size={20} />
             Publicar Vacante
@@ -43,7 +43,7 @@ export default function DashboardEmpleador() {
         </div>
 
         {/* Métricas */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {metricas.map((metric) => {
             const Icon = metric.icon;
             return (
@@ -61,19 +61,19 @@ export default function DashboardEmpleador() {
           })}
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
-          <div className="col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             {/* Vacantes Activas */}
             <div className="bg-white rounded-xl p-6 border border-border">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Tus Vacantes Activas</h2>
                   <p className="text-sm text-muted-foreground mt-1">Gestiona y haz seguimiento de tus publicaciones</p>
                 </div>
                 <button
                   onClick={() => navigate('/empleador/vacantes')}
-                  className="text-accent hover:text-accent/80 font-medium"
+                  className="text-accent hover:text-accent/80 font-medium self-start sm:self-auto"
                 >
                   Ver todas →
                 </button>
@@ -86,18 +86,18 @@ export default function DashboardEmpleador() {
                     className="border border-border rounded-xl p-5 hover:border-accent hover:shadow-md transition-all cursor-pointer"
                     onClick={() => navigate('/empleador/candidatos')}
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                       <div>
                         <h3 className="text-lg font-bold text-gray-900">{vacante.cargo}</h3>
                         <p className="text-sm text-muted-foreground">Publicado {vacante.publicado}</p>
                       </div>
-                      <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full">
+                      <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full w-fit">
                         <Eye size={16} />
                         <span className="text-sm font-bold">Activa</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       <div className="bg-blue-50 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-blue-700">{vacante.postulantes}</p>
                         <p className="text-xs text-blue-600">Total Postulantes</p>
@@ -112,11 +112,11 @@ export default function DashboardEmpleador() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <button className="flex-1 px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button className="w-full sm:flex-1 px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors">
                         Ver postulantes
                       </button>
-                      <button className="flex-1 px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg text-sm font-medium transition-colors">
+                      <button className="w-full sm:flex-1 px-4 py-2 bg-accent hover:bg-accent/90 text-white rounded-lg text-sm font-medium transition-colors">
                         Gestionar
                       </button>
                     </div>
@@ -128,7 +128,7 @@ export default function DashboardEmpleador() {
             {/* Pipeline Resumido */}
             <div className="bg-white rounded-xl p-6 border border-border">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Pipeline de Candidatos</h2>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   { estado: 'Nuevos', cantidad: 12, color: 'bg-blue-500' },
                   { estado: 'En Revisión', cantidad: 8, color: 'bg-yellow-500' },
@@ -155,7 +155,7 @@ export default function DashboardEmpleador() {
               </p>
               <button
                 onClick={() => navigate('/empleador/candidatos')}
-                className="w-full bg-[#FF8C00] text-white px-4 py-3 rounded-lg font-medium hover:bg-[#e67e00] transition-colors shadow-sm"
+                className="w-full bg-accent text-white px-4 py-3 rounded-lg font-medium hover:bg-accent/90 transition-colors"
               >
                 Ver candidatos
               </button>

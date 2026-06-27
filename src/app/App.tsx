@@ -28,12 +28,7 @@ import CalificacionesEmpleador from './components/empleadores/CalificacionesEmpl
 import NotificacionesEmpleador from './components/empleadores/NotificacionesEmpleador';
 
 // Eliminar conforme se editen los componentes para que sean responsivos, ya que no se necesita esta diferenciación
-import LoginEmpleadorMobile from './components/empleadores/LoginEmpleadorMobile';
-import DashboardEmpleadorMobile from './components/empleadores/DashboardEmpleadorMobile';
 import CrearVacanteMobile from './components/empleadores/CrearVacanteMobile';
-import GestionCandidatosMobile from './components/empleadores/GestionCandidatosMobile';
-import GestionVacantesMobile from './components/empleadores/GestionVacantesMobile';
-import MiNegocioMobile from './components/empleadores/MiNegocioMobile';
 import FormalizacionLaboralMobile from './components/empleadores/FormalizacionLaboralMobile';
 import CalificacionesEmpleadorMobile from './components/empleadores/CalificacionesEmpleadorMobile';
 import NotificacionesEmpleadorMobile from './components/empleadores/NotificacionesEmpleadorMobile';
@@ -44,24 +39,9 @@ import RoleSelector from './components/shared/RoleSelector';
 import StyleGuideline from './components/shared/StyleGuideline';
 
 // Todas estas funciones seran eliminadas ya que no cumplen con el principio DRY, renderizan componentes diferentes
-function ResponsiveLoginEmpleador() {
-  const isMobile = useIsMobile();
-  return isMobile ? <LoginEmpleadorMobile /> : <LoginEmpleador />;
-}
-
-function ResponsiveDashboardEmpleador() {
-  const isMobile = useIsMobile();
-  return isMobile ? <DashboardEmpleadorMobile /> : <DashboardEmpleador />;
-}
-
 function ResponsiveCrearVacante() {
   const isMobile = useIsMobile();
   return isMobile ? <CrearVacanteMobile /> : <CrearVacante />;
-}
-
-function ResponsiveGestionCandidatos() {
-  const isMobile = useIsMobile();
-  return isMobile ? <GestionCandidatosMobile /> : <GestionCandidatos />;
 }
 
 function ResponsivePerfilCandidato() {
@@ -72,16 +52,6 @@ function ResponsivePerfilCandidato() {
 function ResponsiveChatEmpleador() {
   const isMobile = useIsMobile();
   return isMobile ? <ChatEmpresarialMobile /> : <ChatEmpresarial />;
-}
-
-function ResponsiveGestionVacantes() {
-  const isMobile = useIsMobile();
-  return isMobile ? <GestionVacantesMobile /> : <GestionVacantes />;
-}
-
-function ResponsiveMiNegocio() {
-  const isMobile = useIsMobile();
-  return isMobile ? <MiNegocioMobile /> : <MiNegocio />;
 }
 
 function ResponsiveFormalizacionLaboral() {
@@ -131,12 +101,12 @@ export default function App() {
           <Route path="/postulante/notificaciones" element={<NotificacionesPostulantes />} />
 
           {/* Rutas Empleadores */}
-          <Route path="/empleador/login" element={<ResponsiveLoginEmpleador />} />
-          <Route path="/empleador/dashboard" element={<ResponsiveDashboardEmpleador />} />
-          <Route path="/empleador/negocio" element={<ResponsiveMiNegocio />} />
+          <Route path="/empleador/login" element={<LoginEmpleador />} />
+          <Route path="/empleador/dashboard" element={<DashboardEmpleador />} />
+          <Route path="/empleador/negocio" element={<MiNegocio />} />
           <Route path="/empleador/crear-vacante" element={<ResponsiveCrearVacante />} />
-          <Route path="/empleador/vacantes" element={<ResponsiveGestionVacantes />} />
-          <Route path="/empleador/candidatos" element={<ResponsiveGestionCandidatos />} />
+          <Route path="/empleador/vacantes" element={<GestionVacantes />} />
+          <Route path="/empleador/candidatos" element={<GestionCandidatos />} />
           <Route path="/empleador/candidato/:id" element={<ResponsivePerfilCandidato />} />
           <Route path="/empleador/formalizacion" element={<ResponsiveFormalizacionLaboral />} />
           <Route path="/empleador/chat" element={<ResponsiveChatEmpleador />} />
