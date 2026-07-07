@@ -21,53 +21,14 @@ import CrearVacante from './components/empleadores/CrearVacante';
 import GestionVacantes from './components/empleadores/GestionVacantes';
 import GestionCandidatos from './components/empleadores/GestionCandidatos';
 import PerfilCandidato from './components/empleadores/PerfilCandidato';
-import PerfilCandidatoMobile from './components/empleadores/PerfilCandidatoMobile';
 import FormalizacionLaboral from './components/empleadores/FormalizacionLaboral';
 import ChatEmpresarial from './components/empleadores/ChatEmpresarial';
 import CalificacionesEmpleador from './components/empleadores/CalificacionesEmpleador';
 import NotificacionesEmpleador from './components/empleadores/NotificacionesEmpleador';
 
-// Eliminar conforme se editen los componentes para que sean responsivos, ya que no se necesita esta diferenciación
-import CrearVacanteMobile from './components/empleadores/CrearVacanteMobile';
-import FormalizacionLaboralMobile from './components/empleadores/FormalizacionLaboralMobile';
-import CalificacionesEmpleadorMobile from './components/empleadores/CalificacionesEmpleadorMobile';
-import NotificacionesEmpleadorMobile from './components/empleadores/NotificacionesEmpleadorMobile';
-import ChatEmpresarialMobile from './components/empleadores/ChatEmpresarialMobile';
-
 // Shared
 import RoleSelector from './components/shared/RoleSelector';
 import StyleGuideline from './components/shared/StyleGuideline';
-
-// Todas estas funciones seran eliminadas ya que no cumplen con el principio DRY, renderizan componentes diferentes
-function ResponsiveCrearVacante() {
-  const isMobile = useIsMobile();
-  return isMobile ? <CrearVacanteMobile /> : <CrearVacante />;
-}
-
-function ResponsivePerfilCandidato() {
-  const isMobile = useIsMobile();
-  return isMobile ? <PerfilCandidatoMobile /> : <PerfilCandidato />;
-}
-
-function ResponsiveChatEmpleador() {
-  const isMobile = useIsMobile();
-  return isMobile ? <ChatEmpresarialMobile /> : <ChatEmpresarial />;
-}
-
-function ResponsiveFormalizacionLaboral() {
-  const isMobile = useIsMobile();
-  return isMobile ? <FormalizacionLaboralMobile /> : <FormalizacionLaboral />;
-}
-
-function ResponsiveCalificacionesEmpleador() {
-  const isMobile = useIsMobile();
-  return isMobile ? <CalificacionesEmpleadorMobile /> : <CalificacionesEmpleador />;
-}
-
-function ResponsiveNotificacionesEmpleador() {
-  const isMobile = useIsMobile();
-  return isMobile ? <NotificacionesEmpleadorMobile /> : <NotificacionesEmpleador />;
-}
 
 /* 
 Este bloque de codigo se encarga de definir las rutas de la aplicación utilizando React Router. 
@@ -104,14 +65,14 @@ export default function App() {
           <Route path="/empleador/login" element={<LoginEmpleador />} />
           <Route path="/empleador/dashboard" element={<DashboardEmpleador />} />
           <Route path="/empleador/negocio" element={<MiNegocio />} />
-          <Route path="/empleador/crear-vacante" element={<ResponsiveCrearVacante />} />
+          <Route path="/empleador/crear-vacante" element={<CrearVacante />} />
           <Route path="/empleador/vacantes" element={<GestionVacantes />} />
           <Route path="/empleador/candidatos" element={<GestionCandidatos />} />
-          <Route path="/empleador/candidato/:id" element={<ResponsivePerfilCandidato />} />
-          <Route path="/empleador/formalizacion" element={<ResponsiveFormalizacionLaboral />} />
-          <Route path="/empleador/chat" element={<ResponsiveChatEmpleador />} />
-          <Route path="/empleador/calificaciones" element={<ResponsiveCalificacionesEmpleador />} />
-          <Route path="/empleador/notificaciones" element={<ResponsiveNotificacionesEmpleador />} />
+          <Route path="/empleador/candidato/:id" element={<PerfilCandidato />} />
+          <Route path="/empleador/formalizacion" element={<FormalizacionLaboral />} />
+          <Route path="/empleador/chat" element={<ChatEmpresarial />} />
+          <Route path="/empleador/calificaciones" element={<CalificacionesEmpleador />} />
+          <Route path="/empleador/notificaciones" element={<NotificacionesEmpleador />} />
         </Routes>
       </BrowserRouter>
     </div>

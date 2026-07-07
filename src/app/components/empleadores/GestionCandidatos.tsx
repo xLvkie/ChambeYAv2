@@ -30,22 +30,26 @@ export default function GestionCandidatos() {
 
   return (
     <LayoutEmpleador>
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gestión de Candidatos</h1>
-          <p className="text-lg text-muted-foreground">Matching y filtrado de postulantes</p>
+      <div className="p-4 lg:p-8">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Gestión de Candidatos</h1>
+          <p className="text-base lg:text-lg text-muted-foreground">Matching y filtrado de postulantes</p>
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl p-6 border border-border mb-6">
-          <div className="flex items-center gap-4">
-            <Filter size={20} className="text-gray-600" />
+        <div className="bg-white rounded-xl p-4 lg:p-6 border border-border mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 lg:gap-4">
+            <div className="flex items-center gap-2 sm:hidden text-gray-600 mb-2 sm:mb-0">
+               <Filter size={18} />
+               <span className="font-medium text-sm">Filtros:</span>
+            </div>
+            <Filter size={20} className="text-gray-600 hidden sm:block shrink-0" />
             <div className="flex gap-2 flex-wrap flex-1">
               {estados.map((estado) => (
                 <button
                   key={estado}
                   onClick={() => setEstadoFilter(estado)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  className={`px-3 py-2 lg:px-4 lg:py-2 rounded-lg font-medium text-xs lg:text-sm transition-colors ${
                     estadoFilter === estado
                       ? 'bg-accent text-white'
                       : 'border border-gray-200 hover:border-accent text-gray-700'
@@ -59,51 +63,51 @@ export default function GestionCandidatos() {
         </div>
 
         {/* Pipeline Visual */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4 mb-6">
           {['Nuevo', 'En Revisión', 'Entrevista', 'Seleccionado', 'Rechazado'].map((estado) => (
-            <div key={estado} className="bg-white rounded-xl p-4 border border-border text-center">
+            <div key={estado} className="bg-white rounded-xl p-3 lg:p-4 border border-border text-center">
               <p className="text-2xl font-bold text-gray-900 mb-1">
                 {candidatos.filter((c) => c.estado === estado).length}
               </p>
-              <p className="text-sm text-muted-foreground">{estado}</p>
+              <p className="text-xs lg:text-sm text-muted-foreground truncate">{estado}</p>
             </div>
           ))}
         </div>
 
         {/* Lista de Candidatos */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           {candidatos.map((candidato) => (
             <div
               key={candidato.id}
-              className="bg-white border border-border rounded-xl p-6 hover:border-accent hover:shadow-md transition-all cursor-pointer"
+              className="bg-white border border-border rounded-xl p-4 lg:p-6 hover:border-accent hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
               onClick={() => navigate(`/empleador/candidato/${candidato.id}`)}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-700 rounded-xl flex items-center justify-center text-2xl text-white">
+              <div className="flex items-start justify-between mb-4 gap-2">
+                <div className="flex gap-3 lg:gap-4">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br from-primary to-blue-700 rounded-xl flex items-center justify-center text-lg lg:text-2xl text-white shrink-0">
                     {candidato.nombre.split(' ').map((n) => n[0]).join('')}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">{candidato.nombre}</h3>
-                    <p className="text-sm text-muted-foreground">{candidato.cargo}</p>
-                    <div className="flex items-center gap-2 mt-1 text-sm">
-                      <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                    <h3 className="text-base lg:text-lg font-bold text-gray-900 leading-tight mb-0.5">{candidato.nombre}</h3>
+                    <p className="text-xs lg:text-sm text-muted-foreground">{candidato.cargo}</p>
+                    <div className="flex items-center gap-1.5 mt-1 lg:mt-1.5 text-xs lg:text-sm">
+                      <Star size={14} className="fill-yellow-400 text-yellow-400 shrink-0" />
                       <span className="font-medium">{candidato.calificacion}</span>
                       <span className="text-muted-foreground">• {candidato.experiencia}</span>
                     </div>
                   </div>
                 </div>
-                <div className="bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-bold">
+                <div className="bg-green-50 text-green-700 px-2 py-1 lg:px-3 lg:py-1.5 rounded-full text-xs lg:text-sm font-bold shrink-0">
                   {candidato.compatibilidad}%
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin size={14} />
-                  <span>{candidato.ubicacion}</span>
+              <div className="flex items-center justify-between pt-3 lg:pt-4 border-t border-border mt-auto">
+                <div className="flex items-center gap-1.5 text-xs lg:text-sm text-gray-600">
+                  <MapPin size={14} className="shrink-0" />
+                  <span className="truncate">{candidato.ubicacion}</span>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(candidato.estado)}`}>
+                <span className={`px-2 py-1 lg:px-3 lg:py-1 rounded-full text-[10px] lg:text-xs font-medium shrink-0 ${getEstadoColor(candidato.estado)}`}>
                   {candidato.estado}
                 </span>
               </div>
