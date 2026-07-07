@@ -3,8 +3,10 @@ import { useIsMobile } from './hooks/useIsMobile';
 
 // Componentes Postulantes
 import LoginPostulante from './components/postulantes/LoginPostulante';
+import RegistroPostulante from './components/postulantes/RegistroPostulante';
 import DashboardPostulante from './components/postulantes/DashboardPostulante';
 import PerfilProfesional from './components/postulantes/PerfilProfesional';
+import EditarPerfilPostulante from './components/postulantes/EditarPerfilPostulante';
 import RegistroHabilidadesPostulante from './components/postulantes/RegistroHabilidades';
 import BusquedaEmpleo from './components/postulantes/BusquedaEmpleo';
 import DetalleVacantePostulante from './components/postulantes/DetalleVacante';
@@ -15,8 +17,10 @@ import NotificacionesPostulantes from './components/postulantes/Notificaciones';
 
 // Componentes Empleadores
 import LoginEmpleador from './components/empleadores/LoginEmpleador';
+import RegistroEmpleador from './components/empleadores/RegistroEmpleador';
 import DashboardEmpleador from './components/empleadores/DashboardEmpleador';
 import MiNegocio from './components/empleadores/MiNegocio';
+import EditarMiNegocio from './components/empleadores/EditarMiNegocio';
 import CrearVacante from './components/empleadores/CrearVacante';
 import GestionVacantes from './components/empleadores/GestionVacantes';
 import GestionCandidatos from './components/empleadores/GestionCandidatos';
@@ -51,8 +55,10 @@ export default function App() {
 
           {/* Rutas Postulantes */}
           <Route path="/postulante/login" element={<LoginPostulante />} />
+          <Route path="/postulante/registro" element={<RegistroPostulante />} />
           <Route path="/postulante/dashboard" element={<DashboardPostulante />} />
           <Route path="/postulante/perfil" element={<PerfilProfesional />} />
+          <Route path="/postulante/editar-perfil" element={<EditarPerfilPostulante />} />
           <Route path="/postulante/habilidades" element={<RegistroHabilidadesPostulante />} />
           <Route path="/postulante/busqueda" element={<BusquedaEmpleo />} />
           <Route path="/postulante/vacante/:id" element={<DetalleVacantePostulante />} />
@@ -63,8 +69,10 @@ export default function App() {
 
           {/* Rutas Empleadores */}
           <Route path="/empleador/login" element={<LoginEmpleador />} />
+          <Route path="/empleador/registro" element={<RegistroEmpleador />} />
           <Route path="/empleador/dashboard" element={<DashboardEmpleador />} />
           <Route path="/empleador/negocio" element={<MiNegocio />} />
+          <Route path="/empleador/negocio/editar" element={<EditarMiNegocio />} />
           <Route path="/empleador/crear-vacante" element={<CrearVacante />} />
           <Route path="/empleador/vacantes" element={<GestionVacantes />} />
           <Route path="/empleador/candidatos" element={<GestionCandidatos />} />

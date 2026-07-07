@@ -1,7 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import LayoutEmpleador from '../shared/LayoutEmpleador';
 import { Edit2, MapPin, Phone, Mail, CheckCircle2, Star, Building2 } from 'lucide-react';
 
 export default function MiNegocio() {
+  const navigate = useNavigate();
+
   return (
     <LayoutEmpleador>
       <div className="p-4 sm:p-6 lg:p-8">
@@ -11,7 +14,9 @@ export default function MiNegocio() {
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Mi Negocio</h1>
             <p className="text-base sm:text-lg text-muted-foreground mt-1">Gestiona la información de tu empresa</p>
           </div>
-          <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium transition-colors">
+          <button 
+            onClick={() => navigate('/empleador/negocio/editar')}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium transition-colors">
             <Edit2 size={20} />
             Editar información
           </button>

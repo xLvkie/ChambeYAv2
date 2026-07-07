@@ -28,50 +28,58 @@ export default function NotificacionesEmpleador() {
 
   return (
     <LayoutEmpleador>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
+      {/* Se eliminó el max-w-7xl mx-auto para que ocupe todo el ancho en PC */}
+      <div className="p-4 lg:p-8">
+        
+        {/* Encabezado */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Notificaciones</h1>
-            <p className="text-lg text-muted-foreground mt-1">Tienes <span className="font-bold text-accent">{noLeidas}</span> notificaciones sin leer</p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">Notificaciones</h1>
+            <p className="text-base lg:text-lg text-muted-foreground mt-1">Tienes <span className="font-bold text-accent">{noLeidas}</span> notificaciones sin leer</p>
           </div>
-          <div className="flex gap-3">
-            <button className="px-5 py-2.5 border border-gray-300 hover:bg-gray-50 rounded-xl font-medium">
+          <div className="flex gap-2 lg:gap-3 w-full sm:w-auto">
+            <button className="flex-1 sm:flex-none px-4 lg:px-5 py-2.5 border border-gray-300 hover:bg-gray-50 rounded-xl font-medium text-sm lg:text-base transition-colors">
               Marcar todas como leídas
             </button>
-            <button className="p-2.5 border border-gray-300 hover:bg-gray-50 rounded-xl">
-              <Settings size={20} />
+            <button className="p-2.5 border border-gray-300 hover:bg-gray-50 rounded-xl shrink-0 transition-colors">
+              <Settings size={20} className="text-gray-600" />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2">
+        {/* Contenedor Principal: 1 col móvil, 3 cols PC */}
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+          
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-xl border border-border overflow-hidden">
-              <div className="p-4 border-b border-border flex gap-2">
+              
+              {/* Filtros Scrolleables en Móvil */}
+              <div className="p-3 lg:p-4 border-b border-border flex gap-2 overflow-x-auto hide-scrollbar">
                 {['Todas', 'Sin leer', 'Postulantes', 'Mensajes'].map((filtro, idx) => (
-                  <button key={filtro} className="px-4 py-2 rounded-lg border border-gray-200 hover:border-accent hover:bg-accent/5 font-medium text-sm">
+                  <button key={filtro} className="px-3 lg:px-4 py-1.5 lg:py-2 rounded-lg border border-gray-200 hover:border-accent hover:bg-accent/5 font-medium text-sm whitespace-nowrap transition-colors">
                     {filtro} ({idx === 0 ? notificaciones.length : idx === 1 ? noLeidas : Math.floor(Math.random() * 5)})
                   </button>
                 ))}
               </div>
 
+              {/* Lista de Notificaciones */}
               <div className="divide-y divide-border">
                 {notificaciones.map((notif) => {
                   const Icono = notif.icono;
                   return (
-                    <div key={notif.id} className={`p-5 hover:bg-gray-50 cursor-pointer ${!notif.leida ? 'bg-blue-50/50' : ''}`}>
-                      <div className="flex gap-4">
-                        <div className={`w-12 h-12 ${getIconoBg(notif.color)} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                    <div key={notif.id} className={`p-4 lg:p-5 hover:bg-gray-50 cursor-pointer transition-colors ${!notif.leida ? 'bg-blue-50/50' : ''}`}>
+                      <div className="flex gap-3 lg:gap-4">
+                        <div className={`w-10 h-10 lg:w-12 lg:h-12 ${getIconoBg(notif.color)} rounded-xl flex items-center justify-center shrink-0`}>
                           <Icono className={getIconoColor(notif.color)} size={20} />
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-1">
-                            <h3 className="font-bold text-gray-900">{notif.titulo}</h3>
-                            <span className="text-sm text-muted-foreground">{notif.hora}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-1 gap-2">
+                            <h3 className="font-bold text-gray-900 text-base truncate">{notif.titulo}</h3>
+                            <span className="text-xs lg:text-sm text-muted-foreground shrink-0">{notif.hora}</span>
                           </div>
-                          <p className="text-gray-700">{notif.mensaje}</p>
+                          <p className="text-sm lg:text-base text-gray-700 leading-snug">{notif.mensaje}</p>
                         </div>
-                        {!notif.leida && <div className="w-2 h-2 bg-accent rounded-full mt-2"></div>}
+                        {!notif.leida && <div className="w-2 h-2 bg-accent rounded-full mt-2 shrink-0"></div>}
                       </div>
                     </div>
                   );
@@ -80,9 +88,12 @@ export default function NotificacionesEmpleador() {
             </div>
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-border">
-              <h3 className="text-lg font-bold mb-4">Resumen de Hoy</h3>
+            
+            {/* Resumen de Hoy */}
+            <div className="bg-white rounded-xl p-5 lg:p-6 border border-border">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Resumen de Hoy</h3>
               <div className="space-y-3">
                 {[
                   { label: 'Nuevos postulantes', valor: '5' },
@@ -91,25 +102,27 @@ export default function NotificacionesEmpleador() {
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">{item.label}</span>
-                    <span className="text-2xl font-bold">{item.valor}</span>
+                    <span className="text-2xl font-bold text-gray-900">{item.valor}</span>
                   </div>
                 ))}
               </div>
             </div>
             
-            <div className="bg-white rounded-xl p-6 border border-border">
+            {/* Preferencias */}
+            <div className="bg-white rounded-xl p-5 lg:p-6 border border-border">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Preferencias</h3>
               <div className="space-y-3">
                 {['Nuevos postulantes', 'Mensajes de candidatos', 'Vacantes próximas a vencer', 'Calificaciones recibidas'].map((pref, idx) => (
-                  <div key={pref} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">{pref}</span>
-                    <div className={`w-11 h-6 rounded-full cursor-pointer transition-colors ${idx < 3 ? 'bg-accent' : 'bg-gray-300'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full mt-1 transition-transform ${idx < 3 ? 'ml-6' : 'ml-1'}`}></div>
+                  <div key={pref} className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-gray-700 leading-tight">{pref}</span>
+                    <div className={`w-11 h-6 rounded-full cursor-pointer transition-colors shrink-0 ${idx < 3 ? 'bg-accent' : 'bg-gray-300'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full mt-1 transition-transform ${idx < 3 ? 'translate-x-6' : 'translate-x-1'}`}></div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+            
           </div>
         </div>
       </div>

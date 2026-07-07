@@ -1,7 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import LayoutPostulante from '../shared/LayoutPostulante';
 import { Camera, Mail, Phone, MapPin, Calendar, Award, Briefcase, FileText, Star, Edit2 } from 'lucide-react';
 
 export default function PerfilProfesional() {
+  const navigate = useNavigate();
   const habilidades = [
     { nombre: 'Electricidad Industrial', nivel: 'Avanzado', progreso: 90 },
     { nombre: 'Soldadura TIG/MIG', nivel: 'Intermedio', progreso: 75 },
@@ -61,7 +63,9 @@ export default function PerfilProfesional() {
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Mi Perfil Profesional</h1>
             <p className="text-base sm:text-lg text-muted-foreground mt-1">Gestiona tu información y destaca tus habilidades</p>
           </div>
-          <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-[#0056B3] hover:bg-blue-800 text-white rounded-xl font-medium transition-colors shadow-sm">
+          <button 
+            onClick={() => navigate('/postulante/editar-perfil')}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-[#0056B3] hover:bg-blue-800 text-white rounded-xl font-medium transition-colors shadow-sm">
             <Edit2 size={20} />
             Editar perfil
           </button>
@@ -187,7 +191,7 @@ export default function PerfilProfesional() {
                     <div>
                       <h4 className="text-lg font-bold text-gray-900 leading-tight">{exp.cargo}</h4>
                       <p className="text-[#0056B3] font-bold text-sm mt-1">{exp.empresa}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 flex items-center gap-1.5 font-medium bg-gray-50 inline-flex px-2 py-1 rounded-md">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 flex items-center gap-1.5 font-medium bg-gray-50 px-2 py-1 rounded-md">
                         <Calendar size={14} />
                         {exp.periodo}
                       </p>

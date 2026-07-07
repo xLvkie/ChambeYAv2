@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Chrome } from 'lucide-react';
 
 export default function LoginEmpleador() {
@@ -163,20 +163,20 @@ export default function LoginEmpleador() {
               Continuar con Google
             </button>
 
-            {/* Register Link */}
+            {/* Register Link /empleador/registro*/}
             <p className="text-center text-sm text-gray-600 mt-6">
               ¿No tienes cuenta?{' '}
-              <a href="#" className="text-[#FF8C00] hover:text-orange-700 font-bold transition-colors">
+              <Link to="/empleador/registro" className="text-[#FF8C00] hover:text-orange-700 font-bold transition-colors">
                 Registra tu empresa
-              </a>
+              </Link>
             </p>
 
             {/* Applicant Link */}
             <p className="text-center text-sm text-gray-600 pt-6 mt-6 border-t border-gray-100">
               ¿Buscas trabajo?{' '}
-              <a href="/postulante/login" className="text-[#0056B3] hover:text-blue-800 font-bold transition-colors">
+              <Link to="/postulante/login" className="text-[#0056B3] hover:text-blue-800 font-bold transition-colors">
                 Ingresa como postulante
-              </a>
+              </Link>
             </p>
           </form>
         </div>

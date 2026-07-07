@@ -158,7 +158,7 @@ export default function LoginPostulante() {
             {/* Enlace de Registro */}
             <p className="text-center text-sm text-gray-600 mt-8">
               ¿No tienes cuenta?{' '}
-              <Link to="#" className="text-[#0056B3] hover:text-blue-800 font-bold transition-colors">
+              <Link to="/postulante/registro" className="text-[#0056B3] hover:text-blue-800 font-bold transition-colors">
                 Regístrate gratis
               </Link>
             </p>
