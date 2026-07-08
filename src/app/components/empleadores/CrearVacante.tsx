@@ -1,17 +1,80 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import LayoutEmpleador from '../shared/LayoutEmpleador';
 import { Plus, X } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { crearVacante } from '../../../services/dbService';
+
+import LayoutEmpleador from '../shared/LayoutEmpleador';
 
 export default function CrearVacante() {
   const navigate = useNavigate();
-  const [habilidades, setHabilidades] = useState<string[]>(['Electricidad Industrial']);
+  const { currentUser, userData } = useAuth();
+  
+  // Estados para manejar el botón de carga y errores
+  const [cargando, setCargando] = useState(false);
+  const [errorUI, setErrorUI] = useState('');
+
+  // Estados del formulario
+  const [cargo, setCargo] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [habilidades, setHabilidades] = useState<string[]>([]);
   const [habilidadInput, setHabilidadInput] = useState('');
+  const [sueldoMin, setSueldoMin] = useState('');
+  const [sueldoMax, setSueldoMax] = useState('');
+  const [modalidad, setModalidad] = useState('Presencial');
+  const [contrato, setContrato] = useState('Tiempo completo');
+  const [ubicacion, setUbicacion] = useState('');
+  const [beneficios, setBeneficios] = useState('');
 
   const agregarHabilidad = () => {
-    if (habilidadInput && !habilidades.includes(habilidadInput)) {
-      setHabilidades([...habilidades, habilidadInput]);
+    if (habilidadInput.trim() && !habilidades.includes(habilidadInput.trim())) {
+      setHabilidades([...habilidades, habilidadInput.trim()]);
       setHabilidadInput('');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorUI('');
+
+    if (!currentUser || !userData) {
+      setErrorUI('Error de autenticación. Por favor, inicia sesión nuevamente.');
+      return;
+    }
+
+    if (habilidades.length === 0) {
+      setErrorUI('Debes agregar al menos una habilidad requerida.');
+      return;
+    }
+
+    setCargando(true);
+
+    try {
+      // Armamos el "paquete" de datos de la vacante
+      const datosVacante = {
+        empleadorId: currentUser.uid,        
+        nombreEmpresa: userData.nombreEmpresa || 'Empresa Confidencial',
+        cargo,
+        descripcion,
+        habilidades,
+        sueldoMin: Number(sueldoMin),
+        sueldoMax: Number(sueldoMax),
+        modalidad,
+        contrato,
+        ubicacion,
+        beneficios
+      };
+
+      // Enviamos a Firebase
+      await crearVacante(datosVacante);
+      
+      // Redirigimos al listado de vacantes tras el éxito
+      navigate('/empleador/vacantes');
+      
+    } catch (error) {
+      console.error("Error completo:", error);
+      setErrorUI('Hubo un problema al publicar la vacante. Inténtalo de nuevo.');
+      setCargando(false);
     }
   };
 
@@ -23,15 +86,28 @@ export default function CrearVacante() {
           <p className="text-base lg:text-lg text-muted-foreground">Publica una oferta laboral en minutos</p>
         </div>
 
-        <div className="bg-white rounded-xl p-5 sm:p-8 border border-border">
-          <form className="space-y-5 sm:space-y-6">
+        <div className="bg-white rounded-xl p-5 sm:p-8 border border-border shadow-sm">
+          
+          {errorUI && (
+            <div className="mb-6 bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {errorUI}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             {/* Cargo */}
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">Cargo / Puesto *</label>
               <input
                 type="text"
+                required
+                value={cargo}
+                onChange={(e) => setCargo(e.target.value)}
                 placeholder="Ej: Técnico Electricista Industrial"
-                className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base"
               />
             </div>
 
@@ -39,9 +115,12 @@ export default function CrearVacante() {
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">Descripción del puesto *</label>
               <textarea
+                required
                 rows={4}
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
                 placeholder="Describe las responsabilidades y requisitos del puesto..."
-                className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm sm:text-base"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors resize-none text-sm sm:text-base"
               />
             </div>
 
@@ -54,65 +133,83 @@ export default function CrearVacante() {
                   value={habilidadInput}
                   onChange={(e) => setHabilidadInput(e.target.value)}
                   placeholder="Agregar habilidad..."
-                  className="flex-1 px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base min-w-0"
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base min-w-0"
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), agregarHabilidad())}
                 />
                 <button
                   type="button"
                   onClick={agregarHabilidad}
-                  className="px-5 sm:px-6 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors shrink-0"
+                  className="px-5 sm:px-6 bg-[#FF8C00] hover:bg-orange-600 text-white rounded-xl font-medium transition-colors shrink-0 flex items-center justify-center"
                 >
                   <Plus size={20} />
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {habilidades.map((hab, idx) => (
-                  <span key={idx} className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-xs sm:text-sm">
-                    {hab}
-                    <button type="button" onClick={() => setHabilidades(habilidades.filter((_, i) => i !== idx))} className="hover:text-blue-900">
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
+                {habilidades.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No has agregado ninguna habilidad aún.</p>
+                ) : (
+                  habilidades.map((hab, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium">
+                      {hab}
+                      <button type="button" onClick={() => setHabilidades(habilidades.filter((_, i) => i !== idx))} className="hover:text-orange-900">
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))
+                )}
               </div>
             </div>
 
-            {/* Sueldo (1 col móvil, 2 cols PC) */}
+            {/* Sueldo */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Sueldo Mínimo (S/) *</label>
                 <input
                   type="number"
+                  required
+                  value={sueldoMin}
+                  onChange={(e) => setSueldoMin(e.target.value)}
                   placeholder="1800"
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Sueldo Máximo (S/) *</label>
                 <input
                   type="number"
+                  required
+                  value={sueldoMax}
+                  onChange={(e) => setSueldoMax(e.target.value)}
                   placeholder="2200"
-                  className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base"
                 />
               </div>
             </div>
 
-            {/* Modalidad y Horario (1 col móvil, 2 cols PC) */}
+            {/* Modalidad y Horario */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Modalidad *</label>
-                <select className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base">
-                  <option>Presencial</option>
-                  <option>Remoto</option>
-                  <option>Híbrido</option>
+                <select 
+                  value={modalidad}
+                  onChange={(e) => setModalidad(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base"
+                >
+                  <option value="Presencial">Presencial</option>
+                  <option value="Remoto">Remoto</option>
+                  <option value="Híbrido">Híbrido</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Tipo de Contrato *</label>
-                <select className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base">
-                  <option>Tiempo completo</option>
-                  <option>Part-time</option>
-                  <option>Por proyecto</option>
+                <select 
+                  value={contrato}
+                  onChange={(e) => setContrato(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base"
+                >
+                  <option value="Tiempo completo">Tiempo completo</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Por proyecto">Por proyecto</option>
                 </select>
               </div>
             </div>
@@ -122,8 +219,11 @@ export default function CrearVacante() {
               <label className="block text-sm font-medium text-gray-900 mb-2">Ubicación *</label>
               <input
                 type="text"
+                required
+                value={ubicacion}
+                onChange={(e) => setUbicacion(e.target.value)}
                 placeholder="Distrito, Provincia"
-                className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm sm:text-base"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors text-sm sm:text-base"
               />
             </div>
 
@@ -132,25 +232,36 @@ export default function CrearVacante() {
               <label className="block text-sm font-medium text-gray-900 mb-2">Beneficios (opcional)</label>
               <textarea
                 rows={3}
+                value={beneficios}
+                onChange={(e) => setBeneficios(e.target.value)}
                 placeholder="Describe los beneficios que ofreces..."
-                className="w-full px-4 py-3 border border-input rounded-xl bg-input-background focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm sm:text-base"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors resize-none text-sm sm:text-base"
               />
             </div>
 
-            {/* Buttons (Apilados en móvil, en fila en PC) */}
+            {/* Botones */}
             <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
               <button
                 type="button"
+                disabled={cargando}
                 onClick={() => navigate('/empleador/vacantes')}
-                className="w-full sm:flex-1 px-6 py-3.5 border border-gray-300 hover:bg-gray-50 rounded-xl font-medium transition-colors"
+                className="w-full sm:flex-1 px-6 py-3.5 border border-gray-300 hover:bg-gray-50 disabled:opacity-50 rounded-xl font-medium transition-colors text-gray-700"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="w-full sm:flex-1 px-6 py-3.5 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium transition-colors"
+                disabled={cargando}
+                className="w-full sm:flex-1 px-6 py-3.5 bg-[#FF8C00] hover:bg-orange-600 text-white rounded-xl font-bold transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
               >
-                Publicar Vacante
+                {cargando ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Publicando...
+                  </>
+                ) : (
+                  'Publicar Vacante'
+                )}
               </button>
             </div>
           </form>

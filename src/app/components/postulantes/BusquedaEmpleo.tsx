@@ -1,99 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LayoutPostulante from '../shared/LayoutPostulante';
 import ModalPostulacion from '../shared/modals/ModalPostulacion';
 import { Search, MapPin, Briefcase, Clock, Filter, CheckCircle2, DollarSign } from 'lucide-react';
+import { obtenerTodasLasVacantesActivas } from '../../../services/dbService';
 
 export default function BusquedaEmpleo() {
   const navigate = useNavigate();
+  
+  // Estados para la base de datos
+  const [vacantes, setVacantes] = useState<any[]>([]);
+  const [vacantesFiltradas, setVacantesFiltradas] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  // Estados de la UI
   const [busqueda, setBusqueda] = useState('');
   const [distrito, setDistrito] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [vacanteSeleccionada, setVacanteSeleccionada] = useState<any>(null); // Para pasar datos al Modal
 
   const categorias = ['Electricidad', 'Carpintería', 'Soldadura', 'Plomería', 'Mecánica', 'Construcción'];
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas');
 
-  const vacantes = [
-    {
-      id: 1,
-      cargo: 'Técnico Electricista',
-      empresa: 'Construcciones Pérez SAC',
-      logo: '🏗️',
-      compatibilidad: 95,
-      sueldo: 'S/. 1,800 - 2,200',
-      ubicacion: 'San Juan de Lurigancho',
-      modalidad: 'Presencial',
-      tiempo: 'Hace 2 horas',
-      verificada: true,
-      tipo: 'Tiempo completo',
-    },
-    {
-      id: 2,
-      cargo: 'Carpintero con Experiencia',
-      empresa: 'Muebles del Norte EIRL',
-      logo: '🪑',
-      compatibilidad: 88,
-      sueldo: 'S/. 1,500 - 2,000',
-      ubicacion: 'Los Olivos',
-      modalidad: 'Presencial',
-      tiempo: 'Hace 5 horas',
-      verificada: true,
-      tipo: 'Tiempo completo',
-    },
-    {
-      id: 3,
-      cargo: 'Técnico en Refrigeración',
-      empresa: 'FrioTec Servicios',
-      logo: '❄️',
-      compatibilidad: 82,
-      sueldo: 'S/. 2,000 - 2,500',
-      ubicacion: 'Ate',
-      modalidad: 'Presencial',
-      tiempo: 'Hace 1 día',
-      verificada: false,
-      tipo: 'Tiempo completo',
-    },
-    {
-      id: 4,
-      cargo: 'Soldador TIG/MIG',
-      empresa: 'Metales Industriales SA',
-      logo: '⚙️',
-      compatibilidad: 90,
-      sueldo: 'S/. 2,200 - 2,800',
-      ubicacion: 'Villa El Salvador',
-      modalidad: 'Presencial',
-      tiempo: 'Hace 3 horas',
-      verificada: true,
-      tipo: 'Tiempo completo',
-    },
-    {
-      id: 5,
-      cargo: 'Gasfitero Profesional',
-      empresa: 'Servicios del Hogar',
-      logo: '🔧',
-      compatibilidad: 75,
-      sueldo: 'S/. 1,600 - 1,900',
-      ubicacion: 'Surco',
-      modalidad: 'Presencial',
-      tiempo: 'Hace 2 días',
-      verificada: true,
-      tipo: 'Part-time',
-    },
-    {
-      id: 6,
-      cargo: 'Técnico Mecánico Automotriz',
-      empresa: 'Talleres Rápidos SAC',
-      logo: '🚗',
-      compatibilidad: 80,
-      sueldo: 'S/. 1,900 - 2,300',
-      ubicacion: 'San Martín de Porres',
-      modalidad: 'Presencial',
-      tiempo: 'Hace 4 horas',
-      verificada: false,
-      tipo: 'Tiempo completo',
-    },
-  ];
+  // 1. Cargar las vacantes al iniciar
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const data = await obtenerTodasLasVacantesActivas();
+        setVacantes(data);
+        setVacantesFiltradas(data); // Inicialmente mostramos todas
+      } catch (error) {
+        console.error("Error al cargar vacantes:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarDatos();
+  }, []);
+
+  // 2. Función para procesar el buscador de texto y ubicación
+  const handleBuscar = () => {
+    const terminoBusqueda = busqueda.toLowerCase().trim();
+    const terminoUbicacion = distrito.toLowerCase().trim();
+
+    const filtrado = vacantes.filter((v) => {
+      const matchTexto = (v.cargo || '').toLowerCase().includes(terminoBusqueda) || 
+                         (v.nombreEmpresa || '').toLowerCase().includes(terminoBusqueda);
+      const matchUbicacion = (v.ubicacion || '').toLowerCase().includes(terminoUbicacion);
+      
+      return matchTexto && matchUbicacion;
+    });
+
+    setVacantesFiltradas(filtrado);
+  };
+
+  // 3. Helpers visuales
+  const obtenerIniciales = (nombre: string) => {
+    return nombre ? nombre.substring(0, 2).toUpperCase() : 'EM';
+  };
+
+  const formatearFecha = (timestamp: any) => {
+    if (!timestamp || typeof timestamp.toDate !== 'function') return 'Recientemente';
+    const fecha = timestamp.toDate();
+    const hoy = new Date();
+    const diffMs = hoy.getTime() - fecha.getTime();
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDias = Math.floor(diffHrs / 24);
+
+    if (diffHrs < 1) return 'Hace un momento';
+    if (diffHrs < 24) return `Hace ${diffHrs} ${diffHrs === 1 ? 'hora' : 'horas'}`;
+    if (diffDias === 1) return 'Hace 1 día';
+    return `Hace ${diffDias} días`;
+  };
 
   return (
     <LayoutPostulante>
@@ -108,10 +87,8 @@ export default function BusquedaEmpleo() {
         {/* Panel del Buscador */}
         <div className="bg-white rounded-xl p-4 sm:p-6 border border-border mb-6 shadow-sm">
           
-          {/* Controles de Búsqueda (Apilados en Móvil, en línea en PC) */}
           <div className="flex flex-col lg:flex-row gap-4">
             
-            {/* Campo Búsqueda */}
             <div className="w-full lg:w-5/12">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -119,13 +96,13 @@ export default function BusquedaEmpleo() {
                   type="text"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Cargo o palabra clave"
-                  className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] focus:border-transparent transition-all"
+                  onKeyPress={(e) => e.key === 'Enter' && handleBuscar()}
+                  placeholder="Cargo o nombre de empresa"
+                  className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] transition-all"
                 />
               </div>
             </div>
 
-            {/* Campo Distrito */}
             <div className="w-full lg:w-4/12">
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -133,15 +110,17 @@ export default function BusquedaEmpleo() {
                   type="text"
                   value={distrito}
                   onChange={(e) => setDistrito(e.target.value)}
-                  placeholder="Distrito"
-                  className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] focus:border-transparent transition-all"
+                  onKeyPress={(e) => e.key === 'Enter' && handleBuscar()}
+                  placeholder="Distrito o Ciudad"
+                  className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] transition-all"
                 />
               </div>
             </div>
 
-            {/* Botones */}
             <div className="w-full lg:w-3/12 flex gap-3">
-              <button className="flex-1 bg-[#0056B3] hover:bg-blue-800 text-white py-3.5 px-6 rounded-xl font-bold transition-all shadow-sm">
+              <button 
+                onClick={handleBuscar}
+                className="flex-1 bg-[#0056B3] hover:bg-blue-800 text-white py-3.5 px-6 rounded-xl font-bold transition-all shadow-sm">
                 Buscar
               </button>
               <button
@@ -153,7 +132,6 @@ export default function BusquedaEmpleo() {
             </div>
           </div>
 
-          {/* Filtros Avanzados (Expandible) */}
           {mostrarFiltros && (
             <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -188,7 +166,7 @@ export default function BusquedaEmpleo() {
           )}
         </div>
 
-        {/* Categorías (Con scroll horizontal en móviles) */}
+        {/* Categorías */}
         <div className="mb-6 overflow-hidden">
           <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 pt-1 px-1 -mx-1">
             <button
@@ -220,87 +198,109 @@ export default function BusquedaEmpleo() {
         {/* Encabezado de Resultados */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <p className="text-gray-700 text-sm sm:text-base">
-            <span className="font-bold text-gray-900">{vacantes.length}</span> oportunidades encontradas
+            <span className="font-bold text-gray-900">{vacantesFiltradas.length}</span> oportunidades encontradas
           </p>
           <select className="w-full sm:w-auto px-4 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] font-medium text-gray-700">
-            <option>Más relevantes</option>
             <option>Más recientes</option>
+            <option>Más relevantes</option>
             <option>Mejor salario</option>
-            <option>Mayor compatibilidad</option>
           </select>
         </div>
 
         {/* Lista de Vacantes (Grid responsivo) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-          {vacantes.map((empleo) => (
-            <div
-              key={empleo.id}
-              className="bg-white border border-border rounded-xl p-5 sm:p-6 hover:border-[#0056B3] hover:shadow-lg transition-all cursor-pointer flex flex-col h-full"
-              onClick={() => navigate(`/postulante/vacante/${empleo.id}`)}
-            >
-              {/* Cabecera de la Tarjeta */}
-              <div className="flex gap-4 mb-4">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                  {empleo.logo}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 truncate">{empleo.cargo}</h3>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <p className="text-sm text-muted-foreground truncate">{empleo.empresa}</p>
-                    {empleo.verificada && (
+          {cargando ? (
+            <div className="col-span-1 lg:col-span-2 flex flex-col items-center justify-center py-12">
+              <svg className="animate-spin h-8 w-8 text-[#0056B3] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <p className="text-gray-500 font-medium">Buscando oportunidades...</p>
+            </div>
+          ) : vacantesFiltradas.length === 0 ? (
+            <div className="col-span-1 lg:col-span-2 text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+              <p className="text-gray-500 font-medium">No se encontraron vacantes con esos criterios.</p>
+              <button 
+                onClick={() => { setBusqueda(''); setDistrito(''); setVacantesFiltradas(vacantes); }}
+                className="mt-4 text-[#0056B3] font-bold hover:underline"
+              >
+                Limpiar búsqueda
+              </button>
+            </div>
+          ) : (
+            vacantesFiltradas.map((empleo) => (
+              <div
+                key={empleo.id}
+                className="bg-white border border-border rounded-xl p-5 sm:p-6 hover:border-[#0056B3] hover:shadow-lg transition-all cursor-pointer flex flex-col h-full"
+                onClick={() => navigate(`/postulante/vacante/${empleo.id}`)}
+              >
+                {/* Cabecera de la Tarjeta */}
+                <div className="flex gap-4 mb-4">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-xl text-[#0056B3] font-bold flex-shrink-0">
+                    {obtenerIniciales(empleo.nombreEmpresa)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-gray-900 truncate">{empleo.cargo}</h3>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <p className="text-sm text-muted-foreground truncate">{empleo.nombreEmpresa}</p>
                       <CheckCircle2 size={14} className="text-green-600 shrink-0" />
-                    )}
+                    </div>
+                  </div>
+                  {/* Etiqueta de compatibilidad visual */}
+                  <div className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-2.5 py-1 rounded-full h-fit border border-green-100 shrink-0">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                    <span className="text-xs font-bold">85%</span>
                   </div>
                 </div>
-                <div className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-2.5 py-1 rounded-full h-fit border border-green-100 shrink-0">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                  <span className="text-xs font-bold">{empleo.compatibilidad}%</span>
-                </div>
-              </div>
 
-              {/* Detalles (Sueldo, Ubicación, Modalidad) */}
-              <div className="space-y-2 mb-6 flex-1">
-                <div className="flex items-center gap-2.5 text-sm">
-                  <DollarSign size={16} className="text-gray-400 shrink-0" />
-                  <span className="font-semibold text-gray-900">{empleo.sueldo}</span>
+                {/* Detalles */}
+                <div className="space-y-2 mb-6 flex-1">
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <DollarSign size={16} className="text-gray-400 shrink-0" />
+                    <span className="font-semibold text-gray-900">
+                      S/. {empleo.sueldoMin} - {empleo.sueldoMax}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm text-gray-600">
+                    <MapPin size={16} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{empleo.ubicacion}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm text-gray-600">
+                    <Briefcase size={16} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{empleo.modalidad} • {empleo.contrato}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                  <MapPin size={16} className="text-gray-400 shrink-0" />
-                  <span className="truncate">{empleo.ubicacion}</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                  <Briefcase size={16} className="text-gray-400 shrink-0" />
-                  <span className="truncate">{empleo.modalidad} • {empleo.tipo}</span>
-                </div>
-              </div>
 
-              {/* Pie de la Tarjeta */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
-                <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Clock size={14} />
-                  {empleo.tiempo}
-                </span>
-                <button
-                  className="px-5 py-2 bg-[#0056B3] hover:bg-blue-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Evita que se dispare el click de la tarjeta entera
-                    setMostrarModal(true);
-                  }}
-                >
-                  Postular
-                </button>
+                {/* Pie de la Tarjeta */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                  <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Clock size={14} />
+                    {formatearFecha(empleo.fechaCreacion)}
+                  </span>
+                  <button
+                    className="px-5 py-2 bg-[#0056B3] hover:bg-blue-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVacanteSeleccionada(empleo);
+                      setMostrarModal(true);
+                    }}
+                  >
+                    Postular
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
         
       </div>
-      {/* Modal de Postulación */}
+
+      {/* Modal de Postulación Dinámico */}
       <ModalPostulacion 
         isOpen={mostrarModal} 
-        onClose={() => setMostrarModal(false)}
-        cargo="Técnico Electricista"
-        empresa="Construcciones Pérez SAC"
+        onClose={() => {
+          setMostrarModal(false);
+          setVacanteSeleccionada(null);
+        }}
+        cargo={vacanteSeleccionada?.cargo || ''}
+        empresa={vacanteSeleccionada?.nombreEmpresa || ''}
       />
 
     </LayoutPostulante>

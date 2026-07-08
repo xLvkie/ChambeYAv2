@@ -6,7 +6,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-// Le decimos a TypeScript que todos los parámetros son texto (string)
+// 1. FUNCION DE REGISTRO
 export const registrarUsuario = async (email: string, password: string, nombre: string, rol: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
