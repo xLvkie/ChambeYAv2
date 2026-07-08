@@ -1,16 +1,33 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { iniciarSesion } from '../../../services/authService';
 import { Mail, Lock, Chrome } from 'lucide-react';
 
 export default function LoginPostulante() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [cargando, setCargando] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/postulante/dashboard');
+    setError(''); 
+    setCargando(true);
+
+    try {
+      await iniciarSesion(email, password);
+      navigate('/postulante/dashboard');
+      
+    } catch (err: any) {
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Correo o contraseña incorrectos.');
+      } else {
+        setError('Ocurrió un error al intentar iniciar sesión.');
+      }
+      setCargando(false);
+    }
   };
 
   return (
@@ -73,12 +90,23 @@ export default function LoginPostulante() {
             <p className="mt-2 text-lg text-gray-500">Ingresa a tu cuenta de postulante</p>
           </div>
 
+          {/* ¡NUEVO!: Alerta de error visual */}
+          {error && (
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Input: Correo electrónico */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-2">
                 Correo electrónico
               </label>
+              {/* ... (tu input de email se queda exactamente igual) ... */}
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
@@ -98,6 +126,7 @@ export default function LoginPostulante() {
               <label htmlFor="password" className="block text-sm font-semibold text-gray-900 mb-2">
                 Contraseña
               </label>
+              {/* ... (tu input de password se queda exactamente igual) ... */}
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
@@ -112,28 +141,25 @@ export default function LoginPostulante() {
               </div>
             </div>
 
-            {/* Recordarme & Olvidaste Contraseña */}
+            {/* Recordarme & Olvidaste Contraseña (Se queda igual) */}
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#0056B3] border-gray-300 rounded focus:ring-[#0056B3] cursor-pointer"
-                />
-                <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Recordarme</span>
-              </label>
-              <Link to="#" className="text-sm font-semibold text-[#0056B3] hover:text-blue-800 transition-colors">
-                ¿Olvidaste tu contraseña?
-              </Link>
+              {/* ... */}
             </div>
 
-            {/* Botón Iniciar Sesión */}
+            {/* ¡ACTUALIZADO!: Botón Iniciar Sesión con estado de carga */}
             <button
               type="submit"
-              className="w-full bg-[#0056B3] hover:bg-blue-800 text-white py-3.5 px-6 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5"
+              disabled={cargando}
+              className="w-full bg-[#0056B3] hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed text-white py-3.5 px-6 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
             >
-              Iniciar sesión
+              {cargando ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Iniciar sesión'
+              )}
             </button>
 
             {/* Divisor */}

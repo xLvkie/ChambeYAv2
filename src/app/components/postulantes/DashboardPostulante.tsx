@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
+import { Briefcase, MapPin, Clock, TrendingUp, Award, Building2, CheckCircle2 } from 'lucide-react';
+
 import LayoutPostulante from '../shared/LayoutPostulante';
 import ModalPostulacion from '../shared/modals/ModalPostulacion';
-import { Briefcase, MapPin, Clock, TrendingUp, Award, Building2, CheckCircle2 } from 'lucide-react';
 
 export default function DashboardPostulante() {
   const navigate = useNavigate();
   const [mostrarModal, setMostrarModal] = useState(false);
+
+  // Firebase Auth Context
+  const { userData } = useAuth();
+  const primerNombre = userData?.nombre ? userData.nombre.split(' ')[0] : 'Postulante';
   
   const recomendados = [
     {
@@ -67,7 +73,7 @@ export default function DashboardPostulante() {
         <div className="mb-6 lg:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">¡Hola, Carlos!</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">¡Hola, {primerNombre}!</h1>
               <p className="text-base sm:text-lg text-muted-foreground mt-1">Aquí están tus oportunidades laborales para hoy</p>
             </div>
             <button

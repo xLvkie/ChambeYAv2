@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { useIsMobile } from './hooks/useIsMobile';
+import { AuthProvider } from '../context/AuthContext';
 
 // Componentes Postulantes
 import LoginPostulante from './components/postulantes/LoginPostulante';
@@ -36,57 +36,73 @@ import NotificacionesEmpleador from './components/empleadores/NotificacionesEmpl
 import RoleSelector from './components/shared/RoleSelector';
 import StyleGuideline from './components/shared/StyleGuideline';
 
-/* 
-Este bloque de codigo se encarga de definir las rutas de la aplicación utilizando React Router. 
-Se incluyen rutas para los postulantes y empleadores, así como una ruta para el selector de rol y la guía de estilo. 
-Para las rutas de empleadores, se utilizan componentes responsivos que renderizan diferentes versiones según el tamaño de pantalla del dispositivo. 
-*/
+// Contexto de autenticación
+import RutaProtegida from './components/auth/RutaProtegida';
+
 export default function App() {
   return (
     <div className="min-h-screen bg-background">
-      <BrowserRouter>
-        <Routes>
-          {/* Redirect raíz */}
-          <Route path="/" element={<Navigate to="/selector" replace />} />
+      {/* 1. AuthProvider envuelve el enrutador para dar contexto global */}
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* =========================================
+                RUTAS PÚBLICAS (Sin iniciar sesión)
+                ========================================= */}
+            <Route path="/" element={<Navigate to="/selector" replace />} />
+            <Route path="/selector" element={<RoleSelector />} />
+            <Route path="/style-guideline" element={<StyleGuideline />} />
 
-          {/* Selector de rol */}
-          <Route path="/selector" element={<RoleSelector />} />
+            <Route path="/postulante/login" element={<LoginPostulante />} />
+            <Route path="/postulante/registro" element={<RegistroPostulante />} />
 
-          {/* Style Guideline */}
-          <Route path="/style-guideline" element={<StyleGuideline />} />
+            <Route path="/empleador/login" element={<LoginEmpleador />} />
+            <Route path="/empleador/registro" element={<RegistroEmpleador />} />
 
-          {/* Rutas Postulantes */}
-          <Route path="/postulante/login" element={<LoginPostulante />} />
-          <Route path="/postulante/registro" element={<RegistroPostulante />} />
-          <Route path="/postulante/dashboard" element={<DashboardPostulante />} />
-          <Route path="/postulante/perfil" element={<PerfilProfesional />} />
-          <Route path="/postulante/editar-perfil" element={<EditarPerfilPostulante />} />
-          <Route path="/postulante/perfil-empresa" element={<PerfilEmpresa />} />
-          <Route path="/postulante/habilidades" element={<RegistroHabilidadesPostulante />} />
-          <Route path="/postulante/busqueda" element={<BusquedaEmpleo />} />
-          <Route path="/postulante/vacante/:id" element={<DetalleVacantePostulante />} />
-          <Route path="/postulante/postulaciones" element={<MisPostulaciones />} />
-          <Route path="/postulante/chat" element={<ChatMensajes />} />
-          <Route path="/postulante/calificaciones" element={<CalificacionesPostulante />} />
-          <Route path="/postulante/notificaciones" element={<NotificacionesPostulantes />} />
+            {/* =========================================
+                RUTAS PRIVADAS POSTULANTE
+                ========================================= */}
+            <Route element={<RutaProtegida rolPermitido="postulante" />}>
+              {/* Ruta de onboarding forzado (Accesible incluso si perfilCompleto es false) */}
+              <Route path="/postulante/editar-perfil" element={<EditarPerfilPostulante />} />
+              
+              {/* Rutas bloqueadas hasta completar el perfil */}
+              <Route path="/postulante/dashboard" element={<DashboardPostulante />} />
+              <Route path="/postulante/perfil" element={<PerfilProfesional />} />
+              <Route path="/postulante/perfil-empresa" element={<PerfilEmpresa />} />
+              <Route path="/postulante/habilidades" element={<RegistroHabilidadesPostulante />} />
+              <Route path="/postulante/busqueda" element={<BusquedaEmpleo />} />
+              <Route path="/postulante/vacante/:id" element={<DetalleVacantePostulante />} />
+              <Route path="/postulante/postulaciones" element={<MisPostulaciones />} />
+              <Route path="/postulante/chat" element={<ChatMensajes />} />
+              <Route path="/postulante/calificaciones" element={<CalificacionesPostulante />} />
+              <Route path="/postulante/notificaciones" element={<NotificacionesPostulantes />} />
+            </Route>
 
-          {/* Rutas Empleadores */}
-          <Route path="/empleador/login" element={<LoginEmpleador />} />
-          <Route path="/empleador/registro" element={<RegistroEmpleador />} />
-          <Route path="/empleador/dashboard" element={<DashboardEmpleador />} />
-          <Route path="/empleador/negocio" element={<MiNegocio />} />
-          <Route path="/empleador/negocio/editar" element={<EditarMiNegocio />} />
-          <Route path="/empleador/crear-vacante" element={<CrearVacante />} />
-          <Route path="/empleador/editar-vacante/:id" element={<EditarVacante />} />
-          <Route path="/empleador/vacantes" element={<GestionVacantes />} />
-          <Route path="/empleador/candidatos" element={<GestionCandidatos />} />
-          <Route path="/empleador/candidato/:id" element={<PerfilCandidato />} />
-          <Route path="/empleador/formalizacion" element={<FormalizacionLaboral />} />
-          <Route path="/empleador/chat" element={<ChatEmpresarial />} />
-          <Route path="/empleador/calificaciones" element={<CalificacionesEmpleador />} />
-          <Route path="/empleador/notificaciones" element={<NotificacionesEmpleador />} />
-        </Routes>
-      </BrowserRouter>
+            {/* =========================================
+                RUTAS PRIVADAS EMPLEADOR
+                ========================================= */}
+            <Route element={<RutaProtegida rolPermitido="empleador" />}>
+              {/* Ruta de onboarding forzado */}
+              <Route path="/empleador/negocio/editar" element={<EditarMiNegocio />} />
+
+              {/* Rutas bloqueadas hasta completar el perfil del negocio */}
+              <Route path="/empleador/dashboard" element={<DashboardEmpleador />} />
+              <Route path="/empleador/negocio" element={<MiNegocio />} />
+              <Route path="/empleador/crear-vacante" element={<CrearVacante />} />
+              <Route path="/empleador/editar-vacante/:id" element={<EditarVacante />} />
+              <Route path="/empleador/vacantes" element={<GestionVacantes />} />
+              <Route path="/empleador/candidatos" element={<GestionCandidatos />} />
+              <Route path="/empleador/candidato/:id" element={<PerfilCandidato />} />
+              <Route path="/empleador/formalizacion" element={<FormalizacionLaboral />} />
+              <Route path="/empleador/chat" element={<ChatEmpresarial />} />
+              <Route path="/empleador/calificaciones" element={<CalificacionesEmpleador />} />
+              <Route path="/empleador/notificaciones" element={<NotificacionesEmpleador />} />
+            </Route>
+
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </div>
   );
 }

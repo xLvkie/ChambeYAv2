@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Chrome, Eye, EyeOff } from 'lucide-react';
 
+import { registrarUsuario } from '../../../services/authService';
+
 export default function RegistroPostulante() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
@@ -12,10 +14,34 @@ export default function RegistroPostulante() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate('/postulante/dashboard');
-  };
+  const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (password !== confirmPassword) {
+    alert("Las contraseñas no coinciden");
+    return;
+  }
+  if (!termsAccepted) {
+    alert("Debes aceptar los términos y condiciones");
+    return;
+  }
+
+  try {
+    // 2. Llamamos a Firebase para crear la cuenta
+    await registrarUsuario(email, password, name, 'postulante');
+    
+    // 3. Lo redirigimos a la página de editar perfil (el Guardián igual lo obligaría a ir ahí)
+    navigate('/postulante/editar-perfil'); 
+    
+  } catch (error: any) {
+    console.error("Error completo:", error);
+    if (error.code === 'auth/email-already-in-use') {
+      alert("Este correo ya está registrado.");
+    } else {
+      alert("Hubo un error al registrarte. Inténtalo de nuevo.");
+    }
+  }
+};
 
   return (
     // Contenedor principal: h-screen y overflow-hidden evitan el scroll global

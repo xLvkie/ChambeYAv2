@@ -1,99 +1,183 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Upload, Save } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { actualizarPerfilUsuario } from '../../../services/dbService';
+
 import LayoutPostulante from '../shared/LayoutPostulante';
-import { Plus, Trash2, Upload } from 'lucide-react';
 
 export default function EditarPerfilPostulante() {
   const navigate = useNavigate();
+  const { currentUser, userData } = useAuth();
+  const [cargando, setCargando] = useState(false);
 
-  // Estados de ejemplo para mantener la UI interactiva (Mock Data)
-  const [habilidades, setHabilidades] = useState([{ id: 1, nombre: 'Electricidad Industrial', porcentaje: 90 }]);
-  const [experiencias, setExperiencias] = useState([
-    { id: 1, cargo: 'Electricista Senior', empresa: 'Construcciones SAC', periodo: 'Ene 2021 - Actualidad' }
-  ]);
-  const [certificados, setCertificados] = useState([{ id: 1, entidad: 'SENATI', año: '2023' }]);
+  // 1. Estados de Datos Personales (Precargados con lo que haya en Firebase)
+  const [titulo, setTitulo] = useState(userData?.tituloProfesional || '');
+  const [telefono, setTelefono] = useState(userData?.telefono || '');
+  const [ubicacion, setUbicacion] = useState(userData?.ubicacion || '');
 
-  const handleSave = (e: React.FormEvent) => {
+  // 2. Estados de las Listas (Precargados con Firebase o vacíos por defecto)
+  const [habilidades, setHabilidades] = useState<any[]>(userData?.habilidades || []);
+  const [experiencias, setExperiencias] = useState<any[]>(userData?.experiencias || []);
+  const [certificados, setCertificados] = useState<any[]>(userData?.certificados || []);
+
+  // 3. Estados Temporales para los formularios de "+ Agregar"
+  const [nuevaHabNombre, setNuevaHabNombre] = useState('');
+  const [nuevaHabPorcentaje, setNuevaHabPorcentaje] = useState('');
+  
+  const [nuevaExpCargo, setNuevaExpCargo] = useState('');
+  const [nuevaExpEmpresa, setNuevaExpEmpresa] = useState('');
+  const [nuevaExpPeriodo, setNuevaExpPeriodo] = useState('');
+  const [nuevaExpDesc, setNuevaExpDesc] = useState('');
+
+  const [nuevoCertEntidad, setNuevoCertEntidad] = useState('');
+  const [nuevoCertAno, setNuevoCertAno] = useState('');
+
+  const iniciales = userData?.nombre ? userData.nombre.substring(0, 2).toUpperCase() : 'US';
+
+  // --- FUNCIONES PARA AGREGAR Y ELIMINAR DE LAS LISTAS ---
+
+  const agregarHabilidad = () => {
+    if (nuevaHabNombre && nuevaHabPorcentaje) {
+      setHabilidades([...habilidades, { 
+        id: Date.now(), 
+        nombre: nuevaHabNombre, 
+        porcentaje: Number(nuevaHabPorcentaje) 
+      }]);
+      setNuevaHabNombre('');
+      setNuevaHabPorcentaje('');
+    }
+  };
+
+  const agregarExperiencia = () => {
+    if (nuevaExpCargo && nuevaExpEmpresa && nuevaExpPeriodo) {
+      setExperiencias([...experiencias, { 
+        id: Date.now(), 
+        cargo: nuevaExpCargo, 
+        empresa: nuevaExpEmpresa, 
+        periodo: nuevaExpPeriodo,
+        descripcion: nuevaExpDesc 
+      }]);
+      setNuevaExpCargo(''); setNuevaExpEmpresa(''); setNuevaExpPeriodo(''); setNuevaExpDesc('');
+    }
+  };
+
+  const agregarCertificado = () => {
+    if (nuevoCertEntidad && nuevoCertAno) {
+      setCertificados([...certificados, { 
+        id: Date.now(), 
+        entidad: nuevoCertEntidad, 
+        año: nuevoCertAno 
+      }]);
+      setNuevoCertEntidad(''); setNuevoCertAno('');
+    }
+  };
+
+  const eliminarElemento = (id: number, tipo: 'habilidad' | 'experiencia' | 'certificado') => {
+    if (tipo === 'habilidad') setHabilidades(habilidades.filter(h => h.id !== id));
+    if (tipo === 'experiencia') setExperiencias(experiencias.filter(e => e.id !== id));
+    if (tipo === 'certificado') setCertificados(certificados.filter(c => c.id !== id));
+  };
+
+  // --- FUNCIÓN FINAL DE GUARDADO EN FIREBASE ---
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/postulante/perfil'); // Redirige al perfil una vez guardado
+    if (!currentUser) return;
+    setCargando(true);
+
+    try {
+      const datosPerfil = {
+        tituloProfesional: titulo,
+        telefono: telefono,
+        ubicacion: ubicacion,
+        habilidades: habilidades,
+        experiencias: experiencias,
+        certificados: certificados
+      };
+
+      await actualizarPerfilUsuario(currentUser.uid, datosPerfil);
+      window.location.href = '/postulante/perfil';
+
+    } catch (error) {
+      console.error(error);
+      alert("Hubo un error al guardar tu perfil.");
+      setCargando(false);
+    }
   };
 
   return (
     <LayoutPostulante>
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-        
-        {/* Encabezado */}
-        <div className="mb-6 lg:mb-8 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 lg:mb-2">Editar Perfil Profesional</h1>
-          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">Actualiza tus datos y destaca tus habilidades para las empresas.</p>
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Editar Perfil Profesional</h1>
+          <p className="text-muted-foreground">Actualiza tus datos y destaca tus habilidades para las empresas.</p>
         </div>
 
         <form onSubmit={handleSave} className="space-y-6 lg:space-y-8">
           
           {/* 1. Datos Personales */}
           <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6 sm:mb-8 text-center sm:text-left">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#0056B3] rounded-2xl flex items-center justify-center text-3xl sm:text-4xl text-white font-bold shrink-0 shadow-sm">
-                CM
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-8">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#0056B3] rounded-2xl flex items-center justify-center text-3xl sm:text-4xl text-white font-bold shrink-0">
+                {iniciales}
               </div>
-              <div className="flex-1 mt-2 sm:mt-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Carlos Martínez</h2>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">carlos.martinez@email.com</p>
+              <div className="flex-1 mt-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{userData?.nombre || 'Cargando...'}</h2>
+                <p className="text-gray-600">{currentUser?.email}</p>
               </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Título Profesional o Especialidad</label>
-                <input type="text" placeholder="Ej. Electricista Industrial Certificado" className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] transition-colors text-sm sm:text-base" />
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Título Profesional *</label>
+                <input required type="text" value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej. Electricista Industrial" className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3]" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Teléfono de Contacto</label>
-                <input type="tel" placeholder="Ej. +51 987 654 321" className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] transition-colors text-sm sm:text-base" />
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Teléfono *</label>
+                <input required type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej. +51 987 654 321" className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3]" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Ubicación (Distrito, Ciudad)</label>
-                <input type="text" placeholder="Ej. San Juan de Lurigancho, Lima" className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3] transition-colors text-sm sm:text-base" />
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Ubicación *</label>
+                <input required type="text" value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} placeholder="Ej. Lima" className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0056B3]" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Currículum Vitae (Solo PDF)</label>
-                <input type="file" accept="application/pdf" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#0056B3] hover:file:bg-blue-100 transition-colors cursor-pointer border border-gray-200 rounded-xl bg-gray-50" />
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">CV (PDF)</label>
+                <input type="file" accept="application/pdf" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-[#0056B3] border border-gray-200 rounded-xl bg-gray-50" />
               </div>
             </div>
           </div>
 
           {/* 2. Habilidades Técnicas */}
           <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 border border-gray-200 shadow-sm">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Habilidades Técnicas</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Habilidades Técnicas</h3>
             
-            {/* Lista de habilidades añadidas */}
+            {/* Lista actual */}
             <div className="flex flex-wrap gap-2 mb-6">
-              {habilidades.length === 0 ? (
-                <p className="text-sm text-gray-500 italic w-full">Aún no has agregado habilidades.</p>
-              ) : (
+              {habilidades.length === 0 ? <p className="text-sm text-gray-500 italic w-full">Aún no has agregado habilidades.</p> : 
                 habilidades.map(hab => (
                   <span key={hab.id} className="inline-flex items-center gap-2 bg-blue-50 text-[#0056B3] px-3.5 py-2 rounded-lg text-sm font-medium border border-blue-100">
                     {hab.nombre} ({hab.porcentaje}%)
-                    <button type="button" className="text-blue-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                    <button type="button" onClick={() => eliminarElemento(hab.id, 'habilidad')} className="text-blue-400 hover:text-red-500"><Trash2 size={16} /></button>
                   </span>
                 ))
-              )}
+              }
             </div>
 
-            {/* Formulario para agregar */}
+            {/* Formulario de Agregar */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <p className="text-sm sm:text-base font-bold text-gray-800 mb-3">+ Agregar Nueva Habilidad</p>
-              <div className="flex flex-col sm:flex-row gap-3 items-end">
-                <div className="w-full sm:flex-1">
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Tipo de Trabajo</label>
-                  <input type="text" placeholder="Ej. Electricidad Industrial" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
+              <p className="text-sm font-bold text-gray-800 mb-3">+ Agregar Nueva Habilidad</p>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Nombre</label>
+                  <input type="text" value={nuevaHabNombre} onChange={(e)=>setNuevaHabNombre(e.target.value)} placeholder="Ej. Instalaciones" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
                 </div>
-                <div className="w-full sm:w-32">
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">% de Dominio</label>
-                  <input type="number" placeholder="Ej. 90" min="1" max="100" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                <div className="w-24">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">% Dominio</label>
+                  <input type="number" value={nuevaHabPorcentaje} onChange={(e)=>setNuevaHabPorcentaje(e.target.value)} placeholder="90" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
                 </div>
-                <button type="button" className="w-full sm:w-auto px-6 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                  <Plus size={18} /> <span className="sm:hidden">Agregar</span>
+                <button type="button" onClick={agregarHabilidad} className="px-6 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg font-bold text-sm flex gap-2">
+                  <Plus size={18} /> Agregar
                 </button>
               </div>
             </div>
@@ -101,101 +185,83 @@ export default function EditarPerfilPostulante() {
 
           {/* 3. Experiencia Laboral */}
           <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 border border-gray-200 shadow-sm">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Experiencia Laboral</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Experiencia Laboral</h3>
             
+            {/* Lista actual */}
             <div className="space-y-3 mb-6">
-              {experiencias.length === 0 ? (
-                <p className="text-sm text-gray-500 italic w-full">Aún no has agregado experiencia laboral.</p>
-              ) : (
+              {experiencias.length === 0 ? <p className="text-sm text-gray-500 italic w-full">Aún no has agregado experiencia.</p> : 
                 experiencias.map(exp => (
                   <div key={exp.id} className="flex items-start justify-between bg-white border border-gray-200 p-4 rounded-xl">
                     <div>
                       <h4 className="font-bold text-gray-900">{exp.cargo}</h4>
-                      <p className="text-sm text-[#0056B3] font-medium">{exp.empresa}</p>
+                      <p className="text-[#0056B3] text-sm font-medium">{exp.empresa}</p>
                       <p className="text-xs text-gray-500 mt-1">{exp.periodo}</p>
                     </div>
-                    <button type="button" className="text-gray-400 hover:text-red-500 p-2 transition-colors"><Trash2 size={18} /></button>
+                    <button type="button" onClick={() => eliminarElemento(exp.id, 'experiencia')} className="text-gray-400 hover:text-red-500 p-2"><Trash2 size={18} /></button>
                   </div>
                 ))
-              )}
+              }
             </div>
 
+            {/* Formulario de Agregar */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <p className="text-sm sm:text-base font-bold text-gray-800 mb-3">+ Agregar Nueva Experiencia</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                <input type="text" placeholder="Cargo (Ej. Electricista Senior)" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                <input type="text" placeholder="Lugar (Ej. Construcciones SAC)" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                <input type="text" placeholder="Periodo (Ej. Ene 2021 - Actualidad)" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                <input type="text" placeholder="Breve descripción de funciones" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
+              <p className="text-sm font-bold text-gray-800 mb-3">+ Agregar Nueva Experiencia</p>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <input type="text" value={nuevaExpCargo} onChange={(e)=>setNuevaExpCargo(e.target.value)} placeholder="Cargo" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                <input type="text" value={nuevaExpEmpresa} onChange={(e)=>setNuevaExpEmpresa(e.target.value)} placeholder="Empresa" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                <input type="text" value={nuevaExpPeriodo} onChange={(e)=>setNuevaExpPeriodo(e.target.value)} placeholder="Periodo (Ej. 2021 - 2023)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                <input type="text" value={nuevaExpDesc} onChange={(e)=>setNuevaExpDesc(e.target.value)} placeholder="Descripción breve" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
               </div>
-              <button type="button" className="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2">
+              <button type="button" onClick={agregarExperiencia} className="w-full px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
                 <Plus size={18} /> Agregar Experiencia
               </button>
             </div>
           </div>
 
-          {/* 4. Certificados y Cursos */}
+          {/* 4. Certificados */}
           <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 border border-gray-200 shadow-sm">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Certificados y Cursos</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Certificados</h3>
             
+            {/* Lista actual */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              {certificados.length === 0 ? (
-                <p className="text-sm text-gray-500 italic w-full col-span-full">Aún no has subido certificados.</p>
-              ) : (
+              {certificados.length === 0 ? <p className="text-sm text-gray-500 italic col-span-full">Aún no has subido certificados.</p> : 
                 certificados.map(cert => (
-                  <div key={cert.id} className="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-50 text-[#0056B3] rounded-lg flex items-center justify-center">
-                        <Upload size={18} />
-                      </div>
+                  <div key={cert.id} className="flex justify-between bg-white border border-gray-200 p-3 rounded-xl">
+                    <div className="flex gap-3">
+                      <div className="w-10 h-10 bg-blue-50 text-[#0056B3] rounded-lg flex items-center justify-center"><Upload size={18} /></div>
                       <div>
                         <h4 className="text-sm font-bold text-gray-900">{cert.entidad}</h4>
                         <p className="text-xs text-gray-500">Año: {cert.año}</p>
                       </div>
                     </div>
-                    <button type="button" className="text-gray-400 hover:text-red-500 p-2 transition-colors"><Trash2 size={16} /></button>
+                    <button type="button" onClick={() => eliminarElemento(cert.id, 'certificado')} className="text-gray-400 hover:text-red-500"><Trash2 size={16} /></button>
                   </div>
                 ))
-              )}
+              }
             </div>
 
+            {/* Formulario de Agregar */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <p className="text-sm sm:text-base font-bold text-gray-800 mb-3">+ Subir Nuevo Certificado</p>
-              <div className="flex flex-col lg:flex-row gap-3 items-end">
-                <div className="w-full lg:flex-1">
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Archivo (PDF)</label>
-                  <input type="file" accept="application/pdf" className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-[#0056B3] hover:file:bg-blue-100 cursor-pointer border border-gray-300 rounded-lg bg-white" />
+              <p className="text-sm font-bold text-gray-800 mb-3">+ Subir Certificado</p>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Entidad</label>
+                  <input type="text" value={nuevoCertEntidad} onChange={(e)=>setNuevoCertEntidad(e.target.value)} placeholder="Ej. SENATI" className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
                 </div>
-                <div className="w-full lg:flex-1">
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Entidad Emisora</label>
-                  <input type="text" placeholder="Ej. SENATI" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                </div>
-                <div className="w-full lg:w-28">
+                <div className="w-24">
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Año</label>
-                  <input type="text" placeholder="Ej. 2023" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                  <input type="text" value={nuevoCertAno} onChange={(e)=>setNuevoCertAno(e.target.value)} placeholder="2023" className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
                 </div>
-                <button type="button" className="w-full lg:w-auto px-5 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                  <Plus size={18} /> <span className="lg:hidden">Agregar</span>
+                <button type="button" onClick={agregarCertificado} className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg font-bold text-sm flex gap-2">
+                  <Plus size={18} /> Agregar
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Botones de Acción Finales */}
-          <div className="pt-4 pb-8 flex flex-col items-center gap-4">
-            <div className="flex flex-col sm:flex-row-reverse w-full sm:w-auto gap-3">
-              <button type="submit" className="w-full sm:w-auto px-8 py-3.5 bg-[#0056B3] hover:bg-blue-800 text-white rounded-xl font-bold text-base transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                Guardar Perfil y Comenzar
-              </button>
-              <button type="button" onClick={() => navigate(-1)} className="w-full sm:w-auto px-8 py-3.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-bold text-base transition-colors">
-                Volver Atrás
-              </button>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium text-center">
-              Para guardar, asegúrate de añadir al menos 1 habilidad o experiencia.
-            </p>
-          </div>
-
+          <button type="submit" disabled={cargando} className="w-full bg-[#0056B3] hover:bg-blue-800 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex justify-center gap-2 shadow-sm">
+            <Save size={20} /> {cargando ? 'Guardando...' : 'Guardar Perfil y Comenzar'}
+          </button>
         </form>
       </div>
     </LayoutPostulante>
