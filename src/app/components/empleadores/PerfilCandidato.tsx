@@ -1,12 +1,50 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../../context/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Star, Briefcase, Award, FileText, MessageSquare } from 'lucide-react';
+import { obtenerPostulacion, actualizarEstadoPostulacion, obtenerPerfilUsuario } from '../../../services/dbService';
+
 import LayoutEmpleador from '../shared/LayoutEmpleador';
 import ModalEntrevista from '../shared/modals/ModalEntrevista';
-import { ArrowLeft, Star, Briefcase, Award, FileText, MessageSquare } from 'lucide-react';
 
 export default function PerfilCandidato() {
-  const [mostrarModalEntrevista, setMostrarModalEntrevista] = useState(false);
+  const { id } = useParams(); // Este ID viene de la URL, ej: /empleador/candidato/ID_POSTULACION
   const navigate = useNavigate();
+
+  const [mostrarModalEntrevista, setMostrarModalEntrevista] = useState(false);
+  const [postulacion, setPostulacion] = useState<any>(null);  
+  // Recoge los datos del candidato desde la postulación para mostrarlos en el perfil
+  const [datosCandidato, setDatosCandidato] = useState<any>(null);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      if (!id) return;
+      try {
+        // 1. Traemos el documento de la postulación
+        const data: any = await obtenerPostulacion(id);
+        setPostulacion(data);
+        
+        // 2. Traemos el perfil real del usuario usando el postulanteId del documento
+        if (data?.postulanteId) {
+          const perfil = await obtenerPerfilUsuario(data.postulanteId);
+          setDatosCandidato(perfil);
+        }
+      } catch (error) {
+        console.error("Error al cargar perfil del candidato:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarDatos();
+  }, [id]);
+
+  const cambiarEstado = async (nuevoEstado: string) => {
+    if (id) {
+      await actualizarEstadoPostulacion(id, nuevoEstado);
+      setPostulacion((prev: any) => ({ ...prev, estado: nuevoEstado }));
+    }
+  };
 
   return (
     <LayoutEmpleador>
@@ -24,18 +62,28 @@ export default function PerfilCandidato() {
           
           <div className="lg:col-span-2 space-y-6">
             {/* Header */}
-            <div className="bg-white rounded-xl p-5 sm:p-8 border border-border">
+            <div className="bg-white rounded-xl p-5 sm:p-8 border border-border shadow-sm">
               <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-center sm:items-start text-center sm:text-left">
                 {/* Avatar (Centrado en móvil) */}
-                <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary to-blue-700 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl text-white shrink-0">
-                  CM
+                <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary to-blue-700 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl text-white shrink-0 shadow-sm">
+                  {postulacion?.nombreCandidato ? postulacion.nombreCandidato.substring(0, 2).toUpperCase() : '??'}
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 leading-tight">Carlos Martínez Rojas</h1>
-                  <p className="text-base sm:text-lg text-muted-foreground mb-4">Electricista Industrial Certificado</p>
-                  
-                  {/* Detalles con flex-wrap para celulares */}
+                  {/* Nombre Real */}
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 leading-tight">
+                    {postulacion?.nombreCandidato || 'Candidato'}
+                  </h1>
+                  {/* Nueva línea de Título Profesional */}
+                  <p className="text-primary font-bold text-sm sm:text-base mb-1">
+                    Trabajo Actual: {datosCandidato?.tituloProfesional || 'Profesional'}
+                  </p>
+                  {/* Cargo al que postuló (para tener contexto) */}
+                  <p className="text-sm sm:text-base text-muted-foreground mb-4">
+                    Postulando a: {postulacion?.cargoPostulado || 'Vacante'}
+                  </p>
+
+                  {/* Detalles con flex-wrap (estatico) */}
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 mb-4 text-sm sm:text-base">
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
@@ -44,7 +92,8 @@ export default function PerfilCandidato() {
                       <span className="ml-1 sm:ml-2 font-bold">4.8</span>
                     </div>
                     <span className="text-gray-600">• 5 años de experiencia</span>
-                    <span className="text-gray-600">• San Juan de Lurigancho</span>
+                    {/* Ubicación Real */}
+                    <span className="text-gray-600">• {postulacion?.ubicacion || 'Ubicación no especificada'}</span>
                   </div>
                   
                   <div className="bg-green-50 text-green-700 px-4 py-2 rounded-xl inline-flex items-center gap-2 font-bold text-sm sm:text-base mx-auto sm:mx-0 w-fit">
@@ -56,24 +105,28 @@ export default function PerfilCandidato() {
             </div>
 
             {/* Habilidades */}
-            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border">
+            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Habilidades Técnicas</h2>
               <div className="space-y-4">
-                {[
-                  { nombre: 'Electricidad Industrial', nivel: 90 },
-                  { nombre: 'Soldadura TIG/MIG', nivel: 75 },
-                  { nombre: 'Carpintería', nivel: 85 },
-                ].map((skill) => (
-                  <div key={skill.nombre}>
-                    <div className="flex justify-between mb-2 text-sm sm:text-base">
-                      <span className="font-medium truncate pr-2">{skill.nombre}</span>
-                      <span className="font-bold text-primary shrink-0">{skill.nivel}%</span>
+                {datosCandidato?.habilidades && datosCandidato.habilidades.length > 0 ? (
+                  datosCandidato.habilidades.map((skill: any, index: number) => (
+                    <div key={index}>
+                      <div className="flex justify-between mb-2 text-sm sm:text-base">
+                        {/* Si tu estructura tiene nombre y nivel, úsalos */}
+                        <span className="font-medium truncate pr-2">{skill.nombre || skill}</span>
+                        <span className="font-bold text-primary shrink-0">{skill.porcentaje || 80}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-primary rounded-full h-3 transition-all duration-500" 
+                          style={{ width: `${skill.porcentaje || 80}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div className="bg-primary rounded-full h-3" style={{ width: `${skill.nivel}%` }}></div>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Este candidato no ha registrado habilidades técnicas.</p>
+                )}
               </div>
             </div>
 
@@ -84,29 +137,29 @@ export default function PerfilCandidato() {
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Experiencia Laboral</h2>
               </div>
               <div className="space-y-5 sm:space-y-4">
-                {[
-                  {
-                    cargo: 'Electricista Senior',
-                    empresa: 'Construcciones del Norte SAC',
-                    periodo: 'Ene 2021 - Actualidad',
-                    descripcion: 'Instalación y mantenimiento de sistemas eléctricos industriales.',
-                  },
-                  {
-                    cargo: 'Técnico Electricista',
-                    empresa: 'Servicios Técnicos Lima EIRL',
-                    periodo: 'Mar 2018 - Dic 2020',
-                    descripcion: 'Instalaciones eléctricas residenciales y comerciales.',
-                  },
-                ].map((exp, idx) => (
-                  <div key={idx} className="border-l-2 border-primary pl-4 py-1">
-                    <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1">{exp.cargo}</h3>
-                    <p className="text-primary font-medium text-sm sm:text-base">{exp.empresa}</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{exp.periodo}</p>
-                    <p className="text-sm text-gray-700 mt-2 leading-relaxed">{exp.descripcion}</p>
-                  </div>
-                ))}
+                {datosCandidato?.experiencias && datosCandidato.experiencias.length > 0 ? (
+                  datosCandidato.experiencias.map((exp: any, index: number) => (
+                    <div key={index} className="border-l-2 border-primary pl-4 py-1">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight mb-1">
+                        {exp.cargo}
+                      </h3>
+                      <p className="text-primary font-medium text-sm sm:text-base">
+                        {exp.empresa}
+                      </p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        {exp.periodo}
+                      </p>
+                      <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+                        {exp.descripcion}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No se ha registrado experiencia laboral.</p>
+                )}
               </div>
             </div>
+
           </div>
 
           {/* Sidebar */}
@@ -148,14 +201,24 @@ export default function PerfilCandidato() {
                 <h3 className="font-bold text-gray-900">Certificados</h3>
               </div>
               <div className="space-y-3.5">
-                {['Electricidad Industrial - SENATI', 'Seguridad Industrial - TECSUP', 'Soldadura Básica - SENATI'].map((cert, idx) => (
-                  <div key={idx} className="text-sm text-gray-700 flex items-start gap-2.5">
-                    <FileText size={16} className="text-muted-foreground mt-0.5 shrink-0" />
-                    <span className="leading-snug">{cert}</span>
-                  </div>
-                ))}
+                {datosCandidato?.certificados && datosCandidato.certificados.length > 0 ? (
+                  datosCandidato.certificados.map((cert: any) => (
+                    <div key={cert.id} className="text-sm text-gray-700 flex items-start gap-2.5">
+                      <FileText size={16} className="text-muted-foreground mt-0.5 shrink-0" />
+                      <span className="leading-snug">
+                        <span className="font-bold text-gray-900">{postulacion?.cargoPostulado}</span> 
+                        {" - "} 
+                        <span className="text-primary font-medium">{cert.entidad}</span>
+                        <span className="text-gray-400 ml-1">({cert.año})</span>
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No tiene certificados registrados.</p>
+                )}
               </div>
             </div>
+            
           </div>
           
         </div>

@@ -47,6 +47,7 @@ export default function DetalleVacantePostulante() {
 
   // 2. Función para procesar la postulación
   const handlePostular = async () => {
+    if (yaPostulo || estaCerrada) return;
     if (id && currentUser?.uid) {
       const datosPostulacion = {
         vacanteId: id,
@@ -60,6 +61,10 @@ export default function DetalleVacantePostulante() {
       };
 
       await registrarPostulacionReal(datosPostulacion);
+      setVacante((prev: any) => ({
+        ...prev,
+        postulantesUnicos: [...(prev.postulantesUnicos || []), currentUser.uid]
+      }));
       setMostrarModal(true);
     }
   };

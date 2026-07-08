@@ -22,7 +22,10 @@ export default function GestionCandidatos() {
       if (currentUser?.uid) {
         try {
           const data = await obtenerPostulacionesPorEmpleador(currentUser.uid);
-          setCandidatos(data);
+          const unicos = data.filter((v, i, a) => 
+            a.findIndex(t => t.postulanteId === v.postulanteId && t.vacanteId === v.vacanteId) === i
+          );
+          setCandidatos(unicos);
         } catch (error) {
           console.error("Error al cargar los candidatos:", error);
         } finally {

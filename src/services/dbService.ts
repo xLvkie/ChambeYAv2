@@ -222,3 +222,15 @@ export const registrarPostulacionReal = async (datosPostulacion: any) => {
     throw error;
   }
 };
+
+/*=======================================
+ FUNCIONALIDADES DEl PERFIL DEL CANDIDATO
+========================================*/ 
+
+// 1. Función para cambiar el estado de la postulación
+
+// 2. Función para obtener el documento de postulación (donde está el estado)
+export const obtenerPostulacion = async (postulacionId: string) => {
+  const docSnap = await getDoc(doc(db, "postulaciones", postulacionId));
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+};
