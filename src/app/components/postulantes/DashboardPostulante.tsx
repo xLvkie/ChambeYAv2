@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LayoutPostulante from '../shared/LayoutPostulante';
+import ModalPostulacion from '../shared/modals/ModalPostulacion';
 import { Briefcase, MapPin, Clock, TrendingUp, Award, Building2, CheckCircle2 } from 'lucide-react';
 
 export default function DashboardPostulante() {
   const navigate = useNavigate();
-
+  const [mostrarModal, setMostrarModal] = useState(false);
+  
   const recomendados = [
     {
       id: 1,
@@ -174,6 +177,7 @@ export default function DashboardPostulante() {
                             className="w-full sm:w-auto px-5 py-2.5 bg-[#0056B3] hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
                             onClick={(e) => {
                               e.stopPropagation();
+                              setMostrarModal(true);
                             }}
                           >
                             Postular ahora
@@ -317,6 +321,15 @@ export default function DashboardPostulante() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Postulación */}
+      <ModalPostulacion 
+        isOpen={mostrarModal} 
+        onClose={() => setMostrarModal(false)}
+        cargo="Técnico Electricista"
+        empresa="Construcciones Pérez SAC"
+      />
+      
     </LayoutPostulante>
   );
 }

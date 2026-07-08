@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LayoutEmpleador from '../shared/LayoutEmpleador';
+import ModalEntrevista from '../shared/modals/ModalEntrevista';
 import { ArrowLeft, Star, Briefcase, Award, FileText, MessageSquare } from 'lucide-react';
 
 export default function PerfilCandidato() {
+  const [mostrarModalEntrevista, setMostrarModalEntrevista] = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -117,7 +120,9 @@ export default function PerfilCandidato() {
               <button className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors">
                 Descargar CV
               </button>
-              <button className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors">
+              <button
+                onClick={() => setMostrarModalEntrevista(true)} 
+                className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors">
                 Agendar Entrevista
               </button>
             </div>
@@ -155,6 +160,13 @@ export default function PerfilCandidato() {
           
         </div>
       </div>
+      {/* Modal de Entrevista */}
+      <ModalEntrevista
+          isOpen={mostrarModalEntrevista} 
+          onClose={() => setMostrarModalEntrevista(false)}
+          candidatoNombre="Carlos Martínez"
+          vacanteCargo="Técnico Electricista"
+        />
     </LayoutEmpleador>
   );
 }

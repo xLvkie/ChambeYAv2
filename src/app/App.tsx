@@ -7,6 +7,7 @@ import RegistroPostulante from './components/postulantes/RegistroPostulante';
 import DashboardPostulante from './components/postulantes/DashboardPostulante';
 import PerfilProfesional from './components/postulantes/PerfilProfesional';
 import EditarPerfilPostulante from './components/postulantes/EditarPerfilPostulante';
+import PerfilEmpresa from './components/postulantes/PerfilEmpresa';
 import RegistroHabilidadesPostulante from './components/postulantes/RegistroHabilidades';
 import BusquedaEmpleo from './components/postulantes/BusquedaEmpleo';
 import DetalleVacantePostulante from './components/postulantes/DetalleVacante';
@@ -22,6 +23,7 @@ import DashboardEmpleador from './components/empleadores/DashboardEmpleador';
 import MiNegocio from './components/empleadores/MiNegocio';
 import EditarMiNegocio from './components/empleadores/EditarMiNegocio';
 import CrearVacante from './components/empleadores/CrearVacante';
+import EditarVacante from './components/empleadores/EditarVacante';
 import GestionVacantes from './components/empleadores/GestionVacantes';
 import GestionCandidatos from './components/empleadores/GestionCandidatos';
 import PerfilCandidato from './components/empleadores/PerfilCandidato';
@@ -59,6 +61,7 @@ export default function App() {
           <Route path="/postulante/dashboard" element={<DashboardPostulante />} />
           <Route path="/postulante/perfil" element={<PerfilProfesional />} />
           <Route path="/postulante/editar-perfil" element={<EditarPerfilPostulante />} />
+          <Route path="/postulante/perfil-empresa" element={<PerfilEmpresa />} />
           <Route path="/postulante/habilidades" element={<RegistroHabilidadesPostulante />} />
           <Route path="/postulante/busqueda" element={<BusquedaEmpleo />} />
           <Route path="/postulante/vacante/:id" element={<DetalleVacantePostulante />} />
@@ -74,6 +77,7 @@ export default function App() {
           <Route path="/empleador/negocio" element={<MiNegocio />} />
           <Route path="/empleador/negocio/editar" element={<EditarMiNegocio />} />
           <Route path="/empleador/crear-vacante" element={<CrearVacante />} />
+          <Route path="/empleador/editar-vacante/:id" element={<EditarVacante />} />
           <Route path="/empleador/vacantes" element={<GestionVacantes />} />
           <Route path="/empleador/candidatos" element={<GestionCandidatos />} />
           <Route path="/empleador/candidato/:id" element={<PerfilCandidato />} />

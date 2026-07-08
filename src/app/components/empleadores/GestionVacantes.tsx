@@ -93,7 +93,9 @@ export default function GestionVacantes() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 hover:bg-gray-100 rounded-lg" title="Editar">
+                        <button
+                          onClick={() => navigate(`/empleador/editar-vacante/${vacante.id}`)}  
+                          className="p-2 hover:bg-gray-100 rounded-lg" title="Editar">
                           <Edit2 size={18} className="text-gray-600" />
                         </button>
                         <button className="p-2 hover:bg-yellow-100 rounded-lg" title="Pausar">

@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LayoutPostulante from '../shared/LayoutPostulante';
+import ModalCertificado from '../shared/modals/ModalCertificados';
+import ModalExperiencia from '../shared/modals/ModalExperiencia';
 import { Camera, Mail, Phone, MapPin, Calendar, Award, Briefcase, FileText, Star, Edit2 } from 'lucide-react';
 
 export default function PerfilProfesional() {
+  const [mostrarModalExp, setMostrarModalExp] = useState(false);
+  const [mostrarModalCert, setMostrarModalCert] = useState(false);
   const navigate = useNavigate();
   const habilidades = [
     { nombre: 'Electricidad Industrial', nivel: 'Avanzado', progreso: 90 },
@@ -144,7 +149,9 @@ export default function PerfilProfesional() {
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Habilidades Técnicas</h3>
                 </div>
-                <button className="w-full sm:w-auto text-[#0056B3] bg-blue-50 sm:bg-transparent py-2 rounded-lg sm:py-0 hover:text-blue-800 font-medium text-sm transition-colors">
+                <button
+                  onClick={() => setMostrarModalExp(true)} 
+                  className="w-full sm:w-auto text-[#0056B3] bg-blue-50 sm:bg-transparent py-2 rounded-lg sm:py-0 hover:text-blue-800 font-medium text-sm transition-colors">
                   + Agregar habilidad
                 </button>
               </div>
@@ -179,7 +186,9 @@ export default function PerfilProfesional() {
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Experiencia Laboral</h3>
                 </div>
-                <button className="w-full sm:w-auto text-purple-600 bg-purple-50 sm:bg-transparent py-2 rounded-lg sm:py-0 hover:text-purple-800 font-medium text-sm transition-colors">
+                <button 
+                  onClick={() => setMostrarModalExp(true)}
+                  className="w-full sm:w-auto text-purple-600 bg-purple-50 sm:bg-transparent py-2 rounded-lg sm:py-0 hover:text-purple-800 font-medium text-sm transition-colors">
                   + Agregar experiencia
                 </button>
               </div>
@@ -211,7 +220,9 @@ export default function PerfilProfesional() {
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Certificados</h3>
                 </div>
-                <button className="w-full sm:w-auto text-green-600 bg-green-50 sm:bg-transparent py-2 rounded-lg sm:py-0 hover:text-green-800 font-medium text-sm transition-colors">
+                <button
+                  onClick={() => setMostrarModalCert(true)} 
+                  className="w-full sm:w-auto text-green-600 bg-green-50 sm:bg-transparent py-2 rounded-lg sm:py-0 hover:text-green-800 font-medium text-sm transition-colors">
                   + Agregar certificado
                 </button>
               </div>
@@ -304,6 +315,10 @@ export default function PerfilProfesional() {
           </div>
         </div>
       </div>
+
+      {/* Modales */}
+      <ModalExperiencia isOpen={mostrarModalExp} onClose={() => setMostrarModalExp(false)} />
+      <ModalCertificado isOpen={mostrarModalCert} onClose={() => setMostrarModalCert(false)} />
     </LayoutPostulante>
   );
 }

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import LayoutPostulante from '../shared/LayoutPostulante';
+import ModalPostulacion from '../shared/modals/ModalPostulacion';
 import { MapPin, Briefcase, Clock, DollarSign, CheckCircle2, ArrowLeft, Star, Bookmark } from 'lucide-react';
 
 export default function DetalleVacantePostulante() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [mostrarModal, setMostrarModal] = useState(false);
 
   return (
     <LayoutPostulante>
@@ -82,7 +85,9 @@ export default function DetalleVacantePostulante() {
 
               {/* Botones de Acción (Apilados en móvil, en línea en PC) */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 pt-6 border-t border-gray-100">
-                <button className="w-full sm:flex-1 bg-[#0056B3] hover:bg-blue-800 text-white py-3.5 sm:py-4 px-6 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                <button 
+                  onClick={() => setMostrarModal(true)}
+                  className="w-full sm:flex-1 bg-[#0056B3] hover:bg-blue-800 text-white py-3.5 sm:py-4 px-6 rounded-xl font-bold text-base sm:text-lg transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
                   Postular a esta vacante
                 </button>
                 <button className="w-full sm:w-auto px-6 py-3.5 sm:py-4 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
@@ -217,7 +222,9 @@ export default function DetalleVacantePostulante() {
                 </div>
               </div>
 
-              <button className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 hover:text-[#0056B3] hover:border-gray-300 rounded-xl text-sm font-bold transition-colors">
+              <button
+                onClick={() => navigate('/postulante/perfil-empresa')} 
+                className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 hover:text-[#0056B3] hover:border-gray-300 rounded-xl text-sm font-bold transition-colors">
                 Ver perfil completo
               </button>
             </div>
@@ -274,7 +281,9 @@ export default function DetalleVacantePostulante() {
               <p className="text-sm text-green-800 mb-5 leading-relaxed font-medium">
                 Tienes <span className="font-bold">95% de compatibilidad</span> con esta vacante. No dejes pasar esta oportunidad.
               </p>
-              <button className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm hover:shadow-md hover:-translate-y-0.5">
+              <button
+                onClick={() => setMostrarModal(true)} 
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm hover:shadow-md hover:-translate-y-0.5">
                 Postular a la vacante
               </button>
             </div>
@@ -282,6 +291,15 @@ export default function DetalleVacantePostulante() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Postulación */}
+      <ModalPostulacion 
+        isOpen={mostrarModal} 
+        onClose={() => setMostrarModal(false)}
+        cargo="Técnico Electricista"
+        empresa="Construcciones Pérez SAC"
+      />
+      
     </LayoutPostulante>
   );
 }

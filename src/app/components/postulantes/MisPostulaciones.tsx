@@ -1,7 +1,11 @@
 import LayoutPostulante from '../shared/LayoutPostulante';
+import ModalDetallePostulacion from '../shared/modals/ModalDetallePostulacion';
 import { Briefcase, MapPin, Clock, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function MisPostulaciones() {
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [postulacionActiva, setPostulacionActiva] = useState<any>(null);
   const postulaciones = [
     {
       id: 1,
@@ -173,7 +177,17 @@ export default function MisPostulaciones() {
                       {post.proximoPaso}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
-                      <button className="w-full sm:w-auto px-5 py-2.5 border border-gray-200 hover:bg-gray-50 hover:text-[#0056B3] rounded-xl text-sm font-semibold transition-colors">
+                      <button
+                        onClick={() => {
+                          setPostulacionActiva({ // DATOS DE PRUEBA, EN UN CASO REAL SE OBTENDRÍAN DE LA API
+                            cargo: 'Técnico Electricista',
+                            empresa: 'Construcciones Pérez SAC',
+                            estadoActual: 'revision', 
+                          fechaPostulacion: '15 de Mayo, 2024'
+                          });
+                          setModalAbierto(true);
+                        }}
+                        className="w-full sm:w-auto px-5 py-2.5 border border-gray-200 hover:bg-gray-50 hover:text-[#0056B3] rounded-xl text-sm font-semibold transition-colors">
                         Ver detalles
                       </button>
                       <button className="w-full sm:w-auto px-5 py-2.5 bg-[#0056B3] hover:bg-blue-800 text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
@@ -187,21 +201,20 @@ export default function MisPostulaciones() {
             </div>
           ))}
         </div>
-
-        {/* Empty State (comentado pero adaptado) */}
-        {/*
-        <div className="bg-white rounded-xl p-8 sm:p-12 border border-border text-center shadow-sm">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-            <Briefcase className="text-gray-400" size={32} />
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Aún no tienes postulaciones</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm sm:text-base">Explora vacantes y comienza a postular a empleos que se ajusten a tus habilidades</p>
-          <button className="w-full sm:w-auto px-6 py-3 bg-[#0056B3] hover:bg-blue-800 text-white rounded-xl font-bold transition-colors shadow-sm">
-            Buscar empleos
-          </button>
-        </div>
-        */}
       </div>
+
+      {/* Modal de Detalle de Postulación */}
+      {postulacionActiva && (
+        <ModalDetallePostulacion 
+          isOpen={modalAbierto} 
+          onClose={() => setModalAbierto(false)}
+          empresa={postulacionActiva.empresa}
+          cargo={postulacionActiva.cargo}
+          estadoActual={postulacionActiva.estadoActual}
+          fechaPostulacion={postulacionActiva.fechaPostulacion}
+        />
+      )}
+      
     </LayoutPostulante>
   );
 }

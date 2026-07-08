@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LayoutPostulante from '../shared/LayoutPostulante';
+import ModalPostulacion from '../shared/modals/ModalPostulacion';
 import { Search, MapPin, Briefcase, Clock, Filter, CheckCircle2, DollarSign } from 'lucide-react';
 
 export default function BusquedaEmpleo() {
@@ -8,6 +9,7 @@ export default function BusquedaEmpleo() {
   const [busqueda, setBusqueda] = useState('');
   const [distrito, setDistrito] = useState('');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
 
   const categorias = ['Electricidad', 'Carpintería', 'Soldadura', 'Plomería', 'Mecánica', 'Construcción'];
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('Todas');
@@ -282,6 +284,7 @@ export default function BusquedaEmpleo() {
                   className="px-5 py-2 bg-[#0056B3] hover:bg-blue-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
                   onClick={(e) => {
                     e.stopPropagation(); // Evita que se dispare el click de la tarjeta entera
+                    setMostrarModal(true);
                   }}
                 >
                   Postular
@@ -292,6 +295,14 @@ export default function BusquedaEmpleo() {
         </div>
         
       </div>
+      {/* Modal de Postulación */}
+      <ModalPostulacion 
+        isOpen={mostrarModal} 
+        onClose={() => setMostrarModal(false)}
+        cargo="Técnico Electricista"
+        empresa="Construcciones Pérez SAC"
+      />
+
     </LayoutPostulante>
   );
 }
