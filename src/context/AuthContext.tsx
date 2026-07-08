@@ -10,12 +10,27 @@ interface UserData {
   email: string;
   rol: 'postulante' | 'empleador';
   perfilCompleto: boolean;
+
+  // Campos de Postulante
   tituloProfesional?: string;
-  telefono?: string;
   ubicacion?: string;
   habilidades?: any[];
   experiencias?: any[];
   certificados?: any[];
+
+  // Campos de Empleador
+  nombreEmpresa?: string;
+  ruc?: string;
+  rubro?: string;
+  direccion?: string;
+  descripcionEmpresa?: string;
+  cantidadEmpleados?: string;
+  razonSocial?: string;
+  fechaInscripcion?: string
+
+  // Campos compartidos
+  telefono?: string;
+  fotoPerfil?: string;
 }
 
 interface AuthContextType {

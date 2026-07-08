@@ -143,7 +143,18 @@ export default function LoginPostulante() {
 
             {/* Recordarme & Olvidaste Contraseña (Se queda igual) */}
             <div className="flex items-center justify-between">
-              {/* ... */}
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-[#0056B3] border-gray-300 rounded focus:ring-[#0056B3] cursor-pointer"
+                />
+                <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">Recordarme</span>
+              </label>
+              <Link to="#" className="text-sm font-semibold text-[#0056B3] hover:text-blue-800 transition-colors">
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
 
             {/* ¡ACTUALIZADO!: Botón Iniciar Sesión con estado de carga */}
