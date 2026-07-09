@@ -96,6 +96,7 @@ export default function App() {
               <Route path="/empleador/candidato/:id" element={<PerfilCandidato />} />
               <Route path="/empleador/formalizacion" element={<FormalizacionLaboral />} />
               <Route path="/empleador/chat" element={<ChatEmpresarial />} />
+              <Route path="/empleador/chat/:id" element={<ChatEmpresarial />} />
               <Route path="/empleador/calificaciones" element={<CalificacionesEmpleador />} />
               <Route path="/empleador/notificaciones" element={<NotificacionesEmpleador />} />
             </Route>

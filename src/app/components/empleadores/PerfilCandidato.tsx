@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, Briefcase, Award, FileText, MessageSquare } from 'lucide-react';
-import { obtenerPostulacion, actualizarEstadoPostulacion, obtenerPerfilUsuario } from '../../../services/dbService';
+import { obtenerPostulacion, actualizarEstadoPostulacion, obtenerPerfilUsuario,
+        obtenerChatEspecifico, activarChatEmpleador
+        } from '../../../services/dbService';
 
 import LayoutEmpleador from '../shared/LayoutEmpleador';
 import ModalEntrevista from '../shared/modals/ModalEntrevista';
@@ -10,6 +12,7 @@ import ModalEntrevista from '../shared/modals/ModalEntrevista';
 export default function PerfilCandidato() {
   const { id } = useParams(); // Este ID viene de la URL, ej: /empleador/candidato/ID_POSTULACION
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const [mostrarModalEntrevista, setMostrarModalEntrevista] = useState(false);
   const [postulacion, setPostulacion] = useState<any>(null);  
@@ -43,6 +46,38 @@ export default function PerfilCandidato() {
     if (id) {
       await actualizarEstadoPostulacion(id, nuevoEstado);
       setPostulacion((prev: any) => ({ ...prev, estado: nuevoEstado }));
+    }
+  };
+
+  const handleContactar = async () => {
+    // Validamos que tengamos todos los IDs necesarios
+    if (!currentUser?.uid || !postulacion?.postulanteId || !postulacion?.vacanteId) return;
+
+    try {
+      // 1. Cambiamos el estado de la postulación visualmente y en BD
+      await cambiarEstado('En revision');
+
+      // 2. Buscamos la sala de chat que se creó automáticamente cuando el candidato postuló
+      const chatExistente: any = await obtenerChatEspecifico(
+        currentUser.uid,
+        postulacion.postulanteId,
+        postulacion.vacanteId
+      );
+
+      if (chatExistente) {
+        // 3. Si el chat estaba bloqueado, lo activamos (esto envía el mensaje automático)
+        if (chatExistente.estado === 'pendiente') {
+          await activarChatEmpleador(chatExistente.id, currentUser.uid);
+        }
+        
+        // 4. Redirigimos al empleador a la pantalla general de chat, abriendo esta sala
+        navigate(`/empleador/chat/${chatExistente.id}`);
+      } else {
+        // Fallback preventivo
+        console.error("No se encontró el chat previo de esta postulación.");
+      }
+    } catch (error) {
+      console.error("Error al iniciar el contacto:", error);
     }
   };
 
@@ -161,27 +196,64 @@ export default function PerfilCandidato() {
             </div>
 
           </div>
-
-          {/* Sidebar */}
+          {/* Sidebar */}         
           <div className="space-y-6">
+            
             {/* Acciones */}
-            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border space-y-3">
-              <button className="w-full px-4 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors">
+            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border space-y-3 shadow-sm">
+              <button 
+                onClick={handleContactar}
+                className="w-full px-4 py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors"
+              >
                 <MessageSquare size={18} />
                 Contactar
               </button>
-              <button className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors">
+              
+              <button 
+                onClick={() => cambiarEstado('En revision')}
+                className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors"
+              >
                 Descargar CV
               </button>
+              
               <button
-                onClick={() => setMostrarModalEntrevista(true)} 
-                className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors">
+                onClick={() => { 
+                  setMostrarModalEntrevista(true); 
+                  cambiarEstado('Entrevista'); 
+                }} 
+                className="w-full px-4 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-colors"
+              >
                 Agendar Entrevista
               </button>
             </div>
 
+            {/* NUEVA CARD: Estado del Candidato */}
+            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm">
+              <h3 className="font-bold text-gray-900 mb-4 text-center sm:text-left">Estado del Candidato</h3>
+              <div className="flex flex-col gap-2">
+                {['En revision', 'Seleccionado', 'Rechazado'].map((est) => (
+                  <button
+                    key={est}
+                    onClick={() => cambiarEstado(est)}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all ${
+                      postulacion?.estado === est 
+                        ? 'bg-primary text-white border-primary' 
+                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Marcar como {est}
+                  </button>
+                ))}
+              </div>
+              {/* Pequeño indicador del estado actual general */}
+              <div className="mt-4 text-center text-sm">
+                <span className="text-gray-500">Estado actual: </span>
+                <span className="font-bold text-primary">{postulacion?.estado || 'No definido'}</span>
+              </div>
+            </div>
+
             {/* Calificación */}
-            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border">
+            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm">
               <h3 className="font-bold text-gray-900 mb-4 text-center sm:text-left">Calificación General</h3>
               <div className="text-center mb-2">
                 <div className="text-5xl font-bold mb-2 text-gray-900">4.8</div>
@@ -194,8 +266,8 @@ export default function PerfilCandidato() {
               </div>
             </div>
 
-            {/* Certificados */}
-            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border">
+            {/* Certificados (Corregido con cert.nombre) */}
+            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Award className="text-green-600 shrink-0" />
                 <h3 className="font-bold text-gray-900">Certificados</h3>
@@ -206,7 +278,7 @@ export default function PerfilCandidato() {
                     <div key={cert.id} className="text-sm text-gray-700 flex items-start gap-2.5">
                       <FileText size={16} className="text-muted-foreground mt-0.5 shrink-0" />
                       <span className="leading-snug">
-                        <span className="font-bold text-gray-900">{postulacion?.cargoPostulado}</span> 
+                        <span className="font-bold text-gray-900">{cert.nombre}</span> 
                         {" - "} 
                         <span className="text-primary font-medium">{cert.entidad}</span>
                         <span className="text-gray-400 ml-1">({cert.año})</span>
@@ -227,8 +299,8 @@ export default function PerfilCandidato() {
       <ModalEntrevista
           isOpen={mostrarModalEntrevista} 
           onClose={() => setMostrarModalEntrevista(false)}
-          candidatoNombre="Carlos Martínez"
-          vacanteCargo="Técnico Electricista"
+          candidatoNombre={postulacion?.nombreCandidato || "Candidato"}
+          vacanteCargo={postulacion?.cargoPostulado || "Vacante"}
         />
     </LayoutEmpleador>
   );
