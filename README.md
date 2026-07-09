@@ -1,4 +1,4 @@
-# ChambeYAv2
+# ChambeYa
 
 Plataforma web que conecta postulantes y empleadores, con servicios de autenticación, gestión de vacantes y perfiles optimizados mediante IA.
 
@@ -125,3 +125,7 @@ ChambeYAv2 es una aplicación multi-sitio que ofrece una landing page estática 
 - Esta plataforma mezcla una landing page estática con una aplicación web moderna basada en React.
 - Firebase ofrece el backend sin servidor necesario para autenticación y datos en tiempo real.
 - La integración con Gemini AI se usa para optimizar perfiles y mejorar la experiencia de los postulantes.
+
+
+
+  
