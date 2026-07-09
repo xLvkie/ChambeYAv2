@@ -15,7 +15,7 @@ export default function ModalCertificado({ isOpen, onClose }: ModalCertificadoPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí irá la lógica para subir el PDF y guardar los datos
+    // Aquí irá la lógica para subir el PDF 
     onClose();
   };
 

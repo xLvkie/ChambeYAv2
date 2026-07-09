@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp, updateDoc,
 
 export interface Calificacion {
   id?: string;
-  tipo?: 'postulante_a_empresa' | 'empresa_a_postulante'; // <-- NUEVO CAMPO
+  tipo?: 'postulante_a_empresa' | 'empresa_a_postulante'; 
   empresaId: string;
   empresaNombre: string;
   postulanteId: string;
@@ -252,7 +252,7 @@ export const obtenerCalificacion = async (postulanteId: string, empresaId: strin
       calificacionesRef,
       where("postulanteId", "==", postulanteId),
       where("empresaId", "==", empresaId),
-      where("tipo", "==", tipo) // <-- ESTE ES EL FIX CLAVE
+      where("tipo", "==", tipo) 
     );
     const querySnapshot = await getDocs(q);
 
@@ -480,7 +480,6 @@ export const registrarPostulacionReal = async (datosPostulacion: any) => {
 
     await registrarPostulacion(datosPostulacion.vacanteId, datosPostulacion.postulanteId);
     
-    // === NUEVO: INICIAR EL CHAT EN ESTADO PENDIENTE ===
     await iniciarChatPostulacion(datosPostulacion);
 
     return true;
@@ -562,7 +561,7 @@ export const iniciarChatPostulacion = async (datosPostulacion: any) => {
       }
     });
 
-    // Guardamos el primer mensaje en la subcolección/colección de mensajes
+    // Guardamos el primer mensaje :v
     const mensajesRef = collection(db, "mensajes");
     await addDoc(mensajesRef, {
       chatId: nuevoChat.id,

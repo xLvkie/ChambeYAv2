@@ -16,7 +16,7 @@ export default function ModalExperiencia({ isOpen, onClose }: ModalExperienciaPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí irá la lógica para guardar la experiencia en el estado global o base de datos
+    // Aquí irá la lógica para guardar la experiencia
     onClose();
   };
 
