@@ -1,12 +1,47 @@
+import { useEffect, useState } from 'react';
 import LayoutEmpleador from '../shared/LayoutEmpleador';
 import { Star, TrendingUp, Award, Flag } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { Calificacion, obtenerCalificacionesEmpresa, obtenerResumenEmpresa } from '../../../services/dbService';
+
+function formatearFecha(timestamp: any) {
+  if (!timestamp) return 'Reciente';
+  const date = timestamp?.toDate?.() ? timestamp.toDate() : new Date(timestamp);
+  return new Intl.DateTimeFormat('es-PE', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+}
 
 export default function CalificacionesEmpleador() {
-  const opiniones = [
-    { id: 1, trabajador: 'Carlos Martínez', puesto: 'Electricista', calificacion: 5, fecha: 'Hace 1 mes', comentario: 'Excelente empresa, muy profesionales y puntuales con los pagos. Ambiente de trabajo agradable.' },
-    { id: 2, trabajador: 'Luis Torres', puesto: 'Carpintero', calificacion: 5, fecha: 'Hace 2 meses', comentario: 'Gran experiencia laboral. Cumplen con todos los beneficios de ley y son muy respetuosos.' },
-    { id: 3, trabajador: 'Roberto Silva', puesto: 'Soldador', calificacion: 4, fecha: 'Hace 3 meses', comentario: 'Buena empresa para trabajar. Podría mejorar en la comunicación interna.' },
-  ];
+  const { currentUser, userData } = useAuth();
+  const [opiniones, setOpiniones] = useState<Calificacion[]>([]);
+  const [resumen, setResumen] = useState({ promedio: 0, cantidadOpiniones: 0, estrellas: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } });
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const cargarCalificaciones = async () => {
+      if (!currentUser?.uid) {
+        setCargando(false);
+        return;
+      }
+
+      try {
+        setCargando(true);
+        const opinionesEmpresa = await obtenerCalificacionesEmpresa(currentUser.uid);
+        const resumenEmpresa = await obtenerResumenEmpresa(currentUser.uid);
+        setOpiniones(opinionesEmpresa);
+        setResumen(resumenEmpresa);
+      } catch (err) {
+        console.error('Error cargando calificaciones de empleador:', err);
+        setError('No se pudo cargar las calificaciones.');
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarCalificaciones();
+  }, [currentUser?.uid]);
+
+  const empresaNombre = userData?.nombreEmpresa || 'Tu empresa';
 
   return (
     <LayoutEmpleador>
@@ -16,94 +51,59 @@ export default function CalificacionesEmpleador() {
           <p className="text-base lg:text-lg text-muted-foreground">Tu reputación como empleador</p>
         </div>
 
-        {/* Layout Principal: 1 col en móvil, 3 en PC */}
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
-          
           <div className="lg:col-span-2 space-y-6 lg:space-y-8">
-            {/* Calificar Trabajador */}
             <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 border border-border shadow-sm">
-              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-5 lg:mb-6">Calificar Trabajador</h2>
-              <div className="space-y-4 lg:space-y-5">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Selecciona trabajador</label>
-                  <select className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent transition-colors text-sm sm:text-base">
-                    <option>Carlos Martínez - Electricista</option>
-                    <option>Luis Torres - Carpintero</option>
-                    <option>Roberto Silva - Soldador</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Calificación</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button key={star} className="hover:scale-110 transition-transform p-1 -m-1">
-                        <Star size={32} className="text-gray-300 hover:text-yellow-400 hover:fill-yellow-400 sm:w-10 sm:h-10 lg:w-8 lg:h-8" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Comentario</label>
-                  <textarea
-                    rows={4}
-                    placeholder="Comparte tu experiencia trabajando con este profesional..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-accent resize-none transition-colors text-sm sm:text-base"
-                  />
-                </div>
-                <button className="w-full px-6 py-3.5 sm:py-3 bg-accent hover:bg-accent/90 text-white rounded-xl font-bold transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
-                  Enviar Calificación
-                </button>
-              </div>
-            </div>
-
-            {/* Opiniones Recibidas */}
-            <div className="bg-white rounded-xl p-5 sm:p-6 lg:p-8 border border-border shadow-sm">
-              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-5 lg:mb-6">Opiniones Recibidas de Trabajadores</h2>
-              <div className="space-y-5 lg:space-y-6">
-                {opiniones.map((opinion) => (
-                  <div key={opinion.id} className="pb-5 lg:pb-6 border-b border-gray-100 last:border-b-0">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 sm:mb-3 gap-1 sm:gap-4">
-                      <div>
-                        <p className="font-bold text-gray-900 text-base sm:text-lg">{opinion.trabajador}</p>
-                        <p className="text-sm font-medium text-gray-600">{opinion.puesto}</p>
+              <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-5 lg:mb-6">Calificaciones de trabajadores</h2>
+              {cargando ? (
+                <p className="text-sm text-gray-600">Cargando opiniones...</p>
+              ) : opiniones.length === 0 ? (
+                <p className="text-sm text-gray-600">Aún no tienes calificaciones de trabajadores.</p>
+              ) : (
+                <div className="space-y-5 lg:space-y-6">
+                  {opiniones.map((opinion) => (
+                    <div key={opinion.id} className="pb-5 lg:pb-6 border-b border-gray-100 last:border-b-0">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 sm:mb-3 gap-1 sm:gap-4">
+                        <div>
+                          <p className="font-bold text-gray-900 text-base sm:text-lg">{opinion.postulanteNombre}</p>
+                          <p className="text-sm font-medium text-gray-600">{opinion.cargo}</p>
+                        </div>
+                        <span className="text-xs sm:text-sm text-muted-foreground bg-gray-50 px-2 py-1 rounded-md w-fit">{formatearFecha(opinion.fecha)}</span>
                       </div>
-                      <span className="text-xs sm:text-sm text-muted-foreground bg-gray-50 px-2 py-1 rounded-md w-fit">{opinion.fecha}</span>
+                      <div className="flex items-center gap-1 mb-3">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} size={16} className={star <= opinion.puntaje ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'} />
+                        ))}
+                        <span className="ml-2 font-bold text-gray-900 text-sm sm:text-base">{opinion.puntaje}.0</span>
+                      </div>
+                      <p className="text-sm sm:text-base text-gray-700 mb-3 leading-relaxed">{opinion.comentario}</p>
+                      <button className="text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 flex items-center gap-1.5 transition-colors">
+                        <Flag size={14} />
+                        Reportar reseña
+                      </button>
                     </div>
-                    <div className="flex items-center gap-1 mb-3">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} size={16} className={`sm:w-5 sm:h-5 ${star <= opinion.calificacion ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`} />
-                      ))}
-                      <span className="ml-2 font-bold text-gray-900 text-sm sm:text-base">{opinion.calificacion}.0</span>
-                    </div>
-                    <p className="text-sm sm:text-base text-gray-700 mb-3 leading-relaxed">{opinion.comentario}</p>
-                    <button className="text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 flex items-center gap-1.5 transition-colors">
-                      <Flag size={14} />
-                      Reportar reseña
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Calificación General */}
-            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center sm:text-left">Tu Calificación</h3>
-              <div className="text-center mb-6">
-                <div className="text-6xl font-black mb-3 text-gray-900">4.8</div>
+            <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm text-center">
+              <h3 className="text-lg font-bold mb-4">Calificación general</h3>
+              <div className="mb-2">
+                <div className="text-5xl sm:text-6xl font-black mb-3 text-gray-900">{resumen.promedio.toFixed(1)}</div>
                 <div className="flex justify-center gap-1 mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} size={22} className="fill-yellow-400 text-yellow-400" />
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <Star key={index} size={22} className={index < Math.round(resumen.promedio) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'} />
                   ))}
                 </div>
-                <p className="text-gray-500 text-sm font-medium">De {opiniones.length} opiniones verificadas</p>
+                <p className="text-gray-500 text-sm font-medium">De {resumen.cantidadOpiniones} opiniones verificadas</p>
               </div>
               <div className="space-y-2.5">
                 {[5, 4, 3, 2, 1].map((stars) => {
-                  const count = opiniones.filter((o) => o.calificacion === stars).length;
-                  const percentage = (count / opiniones.length) * 100;
+                  const count = resumen.estrellas[stars];
+                  const percentage = resumen.cantidadOpiniones ? (count / resumen.cantidadOpiniones) * 100 : 0;
                   return (
                     <div key={stars} className="flex items-center gap-2.5 text-sm font-medium text-gray-700">
                       <span className="w-5 text-right">{stars}</span>
@@ -118,7 +118,6 @@ export default function CalificacionesEmpleador() {
               </div>
             </div>
 
-            {/* Estadísticas */}
             <div className="bg-white rounded-xl p-5 sm:p-6 border border-border shadow-sm">
               <h3 className="text-lg font-bold text-gray-900 mb-5">Estadísticas</h3>
               <div className="space-y-4">
@@ -127,8 +126,8 @@ export default function CalificacionesEmpleador() {
                     <Award className="text-blue-600" size={24} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-0.5">Contrataciones</p>
-                    <p className="text-2xl font-black text-gray-900 leading-none">28</p>
+                    <p className="text-sm font-medium text-muted-foreground mb-0.5">Opiniones recibidas</p>
+                    <p className="text-2xl font-black text-gray-900 leading-none">{resumen.cantidadOpiniones}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -137,7 +136,7 @@ export default function CalificacionesEmpleador() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-0.5">Recomendación</p>
-                    <p className="text-2xl font-black text-gray-900 leading-none">96%</p>
+                    <p className="text-2xl font-black text-gray-900 leading-none">{resumen.cantidadOpiniones ? `${Math.round((resumen.estrellas[4] + resumen.estrellas[5]) / resumen.cantidadOpiniones * 100)}%` : '0%'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -152,7 +151,6 @@ export default function CalificacionesEmpleador() {
               </div>
             </div>
           </div>
-          
         </div>
       </div>
     </LayoutEmpleador>

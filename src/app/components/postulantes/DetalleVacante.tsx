@@ -275,7 +275,7 @@ export default function DetalleVacantePostulante() {
               </div>
                    
               <button
-                onClick={() => navigate('/postulante/perfil-empresa')} 
+                onClick={() => navigate('/postulante/perfil-empresa', { state: { empresaId: vacante.empleadorId, empresaNombre: vacante.nombreEmpresa } })}
                 className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 hover:text-[#0056B3] hover:border-gray-300 rounded-xl text-sm font-bold transition-colors">
                 Ver perfil completo
               </button>
