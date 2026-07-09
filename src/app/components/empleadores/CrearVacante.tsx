@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Sparkles } from 'lucide-react'; // Añadimos Sparkles para el ícono de IA
 import { useAuth } from '../../../context/AuthContext';
 import { crearVacante } from '../../../services/dbService';
+import { aiService } from '../../../services/aiService'; // Importamos nuestro nuevo servicio
 
 import LayoutEmpleador from '../shared/LayoutEmpleador';
 
@@ -12,6 +13,7 @@ export default function CrearVacante() {
   
   // Estados para manejar el botón de carga y errores
   const [cargando, setCargando] = useState(false);
+  const [cargandoIA, setCargandoIA] = useState(false); // Estado para la carga de la IA
   const [errorUI, setErrorUI] = useState('');
 
   // Estados del formulario
@@ -30,6 +32,29 @@ export default function CrearVacante() {
     if (habilidadInput.trim() && !habilidades.includes(habilidadInput.trim())) {
       setHabilidades([...habilidades, habilidadInput.trim()]);
       setHabilidadInput('');
+    }
+  };
+
+  // Función mágica para la IA
+  const handleMejorarConIA = async () => {
+    if (!descripcion.trim()) {
+      setErrorUI('Escribe al menos una idea básica en la descripción para que la IA pueda mejorarla.');
+      return;
+    }
+
+    setCargandoIA(true);
+    setErrorUI(''); // Limpiamos errores previos
+
+    try {
+      // Le pasamos el cargo también para que la IA tenga más contexto
+      const textoBase = cargo ? `Cargo: ${cargo}. ${descripcion}` : descripcion;
+      const descripcionMejorada = await aiService.mejorarVacante(textoBase);
+      setDescripcion(descripcionMejorada);
+    } catch (error) {
+      console.error(error);
+      setErrorUI('Hubo un error al conectar con la Inteligencia Artificial. Inténtalo de nuevo.');
+    } finally {
+      setCargandoIA(false);
     }
   };
 
@@ -111,15 +136,34 @@ export default function CrearVacante() {
               />
             </div>
 
-            {/* Descripción */}
+            {/* Descripción (AQUÍ ESTÁ LA MAGIA DE LA IA) */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">Descripción del puesto *</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-900">Descripción del puesto *</label>
+                <button
+                  type="button"
+                  onClick={handleMejorarConIA}
+                  disabled={cargandoIA}
+                  className="text-xs sm:text-sm font-medium text-[#FF8C00] hover:text-orange-700 flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 hover:border-orange-300 transition-colors disabled:opacity-50"
+                  title="Escribe una idea básica y la IA la convertirá en una descripción profesional"
+                >
+                  {cargandoIA ? (
+                    <span className="animate-pulse flex items-center gap-1">
+                      <Sparkles size={16} className="animate-spin" /> Generando...
+                    </span>
+                  ) : (
+                    <>
+                      <Sparkles size={16} /> Mejorar con IA
+                    </>
+                  )}
+                </button>
+              </div>
               <textarea
                 required
-                rows={4}
+                rows={6} // Aumenté un poco el tamaño para que se aprecie mejor el texto generado
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
-                placeholder="Describe las responsabilidades y requisitos del puesto..."
+                placeholder="Escribe aquí de forma sencilla lo que buscas (ej: Necesito un albañil para una obra de 2 meses, que sepa tarrajear y asentar ladrillo) y presiona 'Mejorar con IA'..."
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#FF8C00] transition-colors resize-none text-sm sm:text-base"
               />
             </div>
@@ -251,7 +295,7 @@ export default function CrearVacante() {
               </button>
               <button
                 type="submit"
-                disabled={cargando}
+                disabled={cargando || cargandoIA} // Deshabilita publicar si la IA está pensando
                 className="w-full sm:flex-1 px-6 py-3.5 bg-[#FF8C00] hover:bg-orange-600 text-white rounded-xl font-bold transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
               >
                 {cargando ? (

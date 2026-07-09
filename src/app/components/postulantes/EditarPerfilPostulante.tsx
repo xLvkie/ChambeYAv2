@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Upload, Save } from 'lucide-react';
+import { Plus, Trash2, Upload, Save, Sparkles } from 'lucide-react'; // Añadido Sparkles
 import { useAuth } from '../../../context/AuthContext';
 import { actualizarPerfilUsuario } from '../../../services/dbService';
+import { aiService } from '../../../services/aiService'; // Importamos la IA
 
 import LayoutPostulante from '../shared/LayoutPostulante';
 
@@ -10,6 +11,7 @@ export default function EditarPerfilPostulante() {
   const navigate = useNavigate();
   const { currentUser, userData } = useAuth();
   const [cargando, setCargando] = useState(false);
+  const [cargandoIA, setCargandoIA] = useState(false); // Estado para la IA
 
   // 1. Estados de Datos Personales (Precargados con lo que haya en Firebase)
   const [titulo, setTitulo] = useState(userData?.tituloProfesional || '');
@@ -77,6 +79,26 @@ export default function EditarPerfilPostulante() {
     if (tipo === 'habilidad') setHabilidades(habilidades.filter(h => h.id !== id));
     if (tipo === 'experiencia') setExperiencias(experiencias.filter(e => e.id !== id));
     if (tipo === 'certificado') setCertificados(certificados.filter(c => c.id !== id));
+  };
+
+  // --- FUNCIÓN DE LA IA PARA EXPERIENCIA ---
+  const handleMejorarExperienciaIA = async () => {
+    if (!nuevaExpDesc.trim()) {
+      alert('Escribe una idea básica de lo que hacías antes de usar la IA.');
+      return;
+    }
+    setCargandoIA(true);
+    try {
+      // Le damos contexto a la IA uniendo el cargo y la empresa
+      const contextoBase = `Trabajé como ${nuevaExpCargo} en ${nuevaExpEmpresa}. Mis tareas fueron: ${nuevaExpDesc}`;
+      const descripcionOptimizada = await aiService.optimizarPerfil(contextoBase);
+      setNuevaExpDesc(descripcionOptimizada);
+    } catch (error) {
+      console.error(error);
+      alert('Hubo un problema al conectar con la Inteligencia Artificial.');
+    } finally {
+      setCargandoIA(false);
+    }
   };
 
   // --- FUNCIÓN FINAL DE GUARDADO EN FIREBASE ---
@@ -196,6 +218,7 @@ export default function EditarPerfilPostulante() {
                       <h4 className="font-bold text-gray-900">{exp.cargo}</h4>
                       <p className="text-[#0056B3] text-sm font-medium">{exp.empresa}</p>
                       <p className="text-xs text-gray-500 mt-1">{exp.periodo}</p>
+                      {exp.descripcion && <p className="text-sm text-gray-700 mt-2">{exp.descripcion}</p>}
                     </div>
                     <button type="button" onClick={() => eliminarElemento(exp.id, 'experiencia')} className="text-gray-400 hover:text-red-500 p-2"><Trash2 size={18} /></button>
                   </div>
@@ -206,14 +229,41 @@ export default function EditarPerfilPostulante() {
             {/* Formulario de Agregar */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
               <p className="text-sm font-bold text-gray-800 mb-3">+ Agregar Nueva Experiencia</p>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <input type="text" value={nuevaExpCargo} onChange={(e)=>setNuevaExpCargo(e.target.value)} placeholder="Cargo" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                <input type="text" value={nuevaExpEmpresa} onChange={(e)=>setNuevaExpEmpresa(e.target.value)} placeholder="Empresa" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                <input type="text" value={nuevaExpPeriodo} onChange={(e)=>setNuevaExpPeriodo(e.target.value)} placeholder="Periodo (Ej. 2021 - 2023)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
-                <input type="text" value={nuevaExpDesc} onChange={(e)=>setNuevaExpDesc(e.target.value)} placeholder="Descripción breve" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <input type="text" value={nuevaExpCargo} onChange={(e)=>setNuevaExpCargo(e.target.value)} placeholder="Cargo (Ej. Pintor)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                <input type="text" value={nuevaExpEmpresa} onChange={(e)=>setNuevaExpEmpresa(e.target.value)} placeholder="Empresa o Cliente" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm" />
+                <input type="text" value={nuevaExpPeriodo} onChange={(e)=>setNuevaExpPeriodo(e.target.value)} placeholder="Periodo (Ej. 2021 - 2023)" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm sm:col-span-2" />
+                
+                {/* Nuevo contenedor extendido para la descripción y la IA */}
+                <div className="col-span-1 sm:col-span-2 mt-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-semibold text-gray-600">Descripción de tareas</label>
+                    <button
+                      type="button"
+                      onClick={handleMejorarExperienciaIA}
+                      disabled={cargandoIA}
+                      className="text-xs font-bold text-[#0056B3] hover:text-blue-800 flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors disabled:opacity-50"
+                    >
+                      {cargandoIA ? (
+                        <span className="animate-pulse flex items-center gap-1"><Sparkles size={14} className="animate-spin" /> Optimizando...</span>
+                      ) : (
+                        <><Sparkles size={14} /> Mejorar texto con IA</>
+                      )}
+                    </button>
+                  </div>
+                  <textarea 
+                    rows={3}
+                    value={nuevaExpDesc} 
+                    onChange={(e)=>setNuevaExpDesc(e.target.value)} 
+                    placeholder="Describe qué hacías (ej: Pintado de fachadas en edificios de 5 pisos usando andamios)..." 
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0056B3] text-sm resize-none" 
+                  />
+                </div>
               </div>
-              <button type="button" onClick={agregarExperiencia} className="w-full px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
-                <Plus size={18} /> Agregar Experiencia
+              
+              <button type="button" onClick={agregarExperiencia} className="w-full px-4 py-3 mt-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
+                <Plus size={18} /> Agregar Experiencia a la Lista
               </button>
             </div>
           </div>
@@ -259,7 +309,7 @@ export default function EditarPerfilPostulante() {
             </div>
           </div>
 
-          <button type="submit" disabled={cargando} className="w-full bg-[#0056B3] hover:bg-blue-800 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex justify-center gap-2 shadow-sm">
+          <button type="submit" disabled={cargando} className="w-full bg-[#0056B3] hover:bg-blue-800 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex justify-center gap-2 shadow-sm transition-colors">
             <Save size={20} /> {cargando ? 'Guardando...' : 'Guardar Perfil y Comenzar'}
           </button>
         </form>

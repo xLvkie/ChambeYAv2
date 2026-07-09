@@ -17,6 +17,7 @@ interface UserData {
   habilidades?: any[];
   experiencias?: any[];
   certificados?: any[];
+  vistasPerfil?: string[];
 
   // Campos de Empleador
   nombreEmpresa?: string;

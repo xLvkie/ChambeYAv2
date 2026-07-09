@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, collection, addDoc, serverTimestamp, updateDoc,
 
 export interface Calificacion {
   id?: string;
+  tipo?: 'postulante_a_empresa' | 'empresa_a_postulante'; // <-- NUEVO CAMPO
   empresaId: string;
   empresaNombre: string;
   postulanteId: string;
@@ -21,6 +22,13 @@ export interface EmpresaCalificable {
   empresaNombre: string;
   vacanteId: string;
   cargoPostulado: string;
+}
+
+export interface TrabajadorCalificable {
+  postulanteId: string;
+  postulanteNombre: string;
+  vacanteId: string;
+  cargo: string;
 }
 
 export interface ResumenEmpresa {
@@ -166,6 +174,50 @@ export const obtenerEmpresasCalificables = async (postulanteId: string): Promise
   }
 };
 
+export const obtenerPostulantesCalificables = async (empleadorId: string): Promise<TrabajadorCalificable[]> => {
+  try {
+    const postulacionesRef = collection(db, "postulaciones");
+    const q = query(postulacionesRef, where("empleadorId", "==", empleadorId));
+    const querySnapshot = await getDocs(q);
+
+    const trabajadoresMap = new Map<string, TrabajadorCalificable>();
+
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data() as any;
+      const postulanteId = data.postulanteId;
+      const cargo = data.cargoPostulado || data.cargo || "Trabajador";
+
+      if (!postulanteId) continue;
+
+      let postulanteNombre = data.nombreCandidato || data.postulanteNombre || "";
+
+      if (!postulanteNombre) {
+        try {
+          const userDoc = await getDoc(doc(db, "usuarios", postulanteId));
+          if (userDoc.exists()) {
+             postulanteNombre = (userDoc.data() as any).nombre || "Candidato";
+          }
+        } catch (error) {
+          console.warn("No se pudo obtener el nombre del candidato", error);
+        }
+      }
+
+      if (!trabajadoresMap.has(postulanteId)) {
+        trabajadoresMap.set(postulanteId, {
+          postulanteId,
+          postulanteNombre: postulanteNombre || "Candidato",
+          vacanteId: data.vacanteId || "",
+          cargo,
+        });
+      }
+    }
+    return Array.from(trabajadoresMap.values());
+  } catch (error) {
+    console.error("Error al obtener postulantes calificables:", error);
+    return [];
+  }
+};
+
 export const registrarCalificacion = async (datos: Omit<Calificacion, 'id' | 'fecha'>) => {
   try {
     const calificacionesRef = collection(db, "calificaciones");
@@ -193,13 +245,14 @@ export const actualizarCalificacion = async (calificacionId: string, datos: Part
   }
 };
 
-export const obtenerCalificacion = async (postulanteId: string, empresaId: string): Promise<Calificacion | null> => {
+export const obtenerCalificacion = async (postulanteId: string, empresaId: string, tipo: string): Promise<Calificacion | null> => {
   try {
     const calificacionesRef = collection(db, "calificaciones");
     const q = query(
       calificacionesRef,
       where("postulanteId", "==", postulanteId),
-      where("empresaId", "==", empresaId)
+      where("empresaId", "==", empresaId),
+      where("tipo", "==", tipo) // <-- ESTE ES EL FIX CLAVE
     );
     const querySnapshot = await getDocs(q);
 
@@ -218,7 +271,12 @@ export const obtenerCalificacion = async (postulanteId: string, empresaId: strin
 export const obtenerCalificacionesEmpresa = async (empresaId: string): Promise<Calificacion[]> => {
   try {
     const calificacionesRef = collection(db, "calificaciones");
-    const q = query(calificacionesRef, where("empresaId", "==", empresaId));
+    // Añadimos el filtro de TIPO
+    const q = query(
+      calificacionesRef, 
+      where("empresaId", "==", empresaId),
+      where("tipo", "==", "postulante_a_empresa") 
+    );
     const querySnapshot = await getDocs(q);
 
     const calificaciones: Calificacion[] = [];
@@ -274,7 +332,12 @@ export const obtenerResumenEmpresa = async (empresaId: string): Promise<ResumenE
 export const obtenerCalificacionesPostulante = async (postulanteId: string): Promise<Calificacion[]> => {
   try {
     const calificacionesRef = collection(db, "calificaciones");
-    const q = query(calificacionesRef, where("postulanteId", "==", postulanteId));
+    // Añadimos el filtro de TIPO
+    const q = query(
+      calificacionesRef, 
+      where("postulanteId", "==", postulanteId),
+      where("tipo", "==", "empresa_a_postulante")
+    );
     const querySnapshot = await getDocs(q);
 
     const calificaciones: Calificacion[] = [];
@@ -360,6 +423,20 @@ export const obtenerPerfilUsuario = async (userId: string) => {
   }
 };
 
+export const registrarVistaPerfil = async (postulanteId: string, empleadorId: string) => {
+  try {
+    if (!empleadorId || !postulanteId) return;
+    const userRef = doc(db, "usuarios", postulanteId);
+    
+    // arrayUnion agrega el ID solo si no existe previamente
+    await updateDoc(userRef, {
+      vistasPerfil: arrayUnion(empleadorId)
+    });
+  } catch (error) {
+    console.error("Error al registrar la vista del perfil:", error);
+  }
+};
+
 /*=======================================
  FUNCIONALIDADES DE GESTIÓN DE CANDIDATOS
 =======================================*/ 
@@ -422,8 +499,45 @@ export const obtenerPostulacion = async (postulacionId: string) => {
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
 };
 
+export const obtenerPostulacionesPorPostulante = async (postulanteId: string) => {
+  try {
+    // 1. Buscamos todas las postulaciones del usuario
+    const postulacionesRef = collection(db, "postulaciones");
+    const q = query(postulacionesRef, where("postulanteId", "==", postulanteId));
+    const querySnapshot = await getDocs(q);
 
+    const postulaciones: any[] = [];
+    
+    // 2. Por cada postulación, buscamos los datos de la vacante original
+    for (const docSnap of querySnapshot.docs) {
+      const dataPostulacion = docSnap.data();
+      let datosVacante = {};
 
+      if (dataPostulacion.vacanteId) {
+        const vacanteDoc = await getDoc(doc(db, "vacantes", dataPostulacion.vacanteId));
+        if (vacanteDoc.exists()) {
+          datosVacante = vacanteDoc.data();
+        }
+      }
+
+      postulaciones.push({
+        id: docSnap.id,
+        ...dataPostulacion,
+        vacante: datosVacante
+      });
+    }
+
+    // 3. Ordenamos de la más reciente a la más antigua
+    return postulaciones.sort((a, b) => {
+      const timeA = a.fecha?.toMillis() || 0;
+      const timeB = b.fecha?.toMillis() || 0;
+      return timeB - timeA;
+    });
+  } catch (error) {
+    console.error("Error al obtener las postulaciones del candidato:", error);
+    return [];
+  }
+};
 
 /*=======================================
  FUNCIONALIDADES DE MENSAJERÍA (CHATS)
@@ -553,5 +667,217 @@ export const marcarComoLeido = async (chatId: string, userId: string) => {
     });
   } catch (error) {
     console.error("Error al marcar como leído:", error);
+  }
+};
+
+/*===============================================
+ FUNCIONALIDADES PARA EL DASHBOARD DEL POSTULANTE
+===============================================*/
+
+// 1. Obtener las 3 vacantes activas más recientes
+export const obtenerEmpleosRecomendados = async () => {
+  try {
+    const vacantesRef = collection(db, "vacantes");
+    // Buscamos solo activas y las ordenamos por fecha
+    const q = query(
+      vacantesRef, 
+      where("estado", "==", "activa")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const vacantes: any[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      vacantes.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Las ordenamos manualmente (por si hay problemas con índices en Firebase) y tomamos las 3 primeras
+    return vacantes
+      .sort((a, b) => (b.fechaCreacion?.toMillis() || 0) - (a.fechaCreacion?.toMillis() || 0))
+      .slice(0, 3);
+  } catch (error) {
+    console.error("Error al obtener empleos recomendados:", error);
+    return [];
+  }
+};
+
+// 2. Obtener top 3 empresas con más vacantes activas
+export const obtenerEmpresasDestacadas = async () => {
+  try {
+    const vacantesRef = collection(db, "vacantes");
+    const q = query(vacantesRef, where("estado", "==", "activa"));
+    const querySnapshot = await getDocs(q);
+    
+    // Usamos un mapa para contar cuántas vacantes tiene cada empresa
+    const empresasMap = new Map();
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const empresaNombre = data.nombreEmpresa || 'Empresa Confidencial';
+      
+      if (empresasMap.has(empresaNombre)) {
+        empresasMap.set(empresaNombre, empresasMap.get(empresaNombre) + 1);
+      } else {
+        empresasMap.set(empresaNombre, 1);
+      }
+    });
+
+    // Convertimos el mapa a un arreglo, lo ordenamos por cantidad y tomamos las 3 mejores
+    const empresasArray = Array.from(empresasMap, ([nombre, vacantes]) => ({
+      nombre,
+      vacantes,
+      sector: 'Diversos Sectores', // Placeholder, ya que el sector no suele estar en la vacante directamente
+      logo: nombre.charAt(0).toUpperCase()
+    }));
+
+    return empresasArray
+      .sort((a, b) => b.vacantes - a.vacantes)
+      .slice(0, 3);
+  } catch (error) {
+    console.error("Error al obtener empresas destacadas:", error);
+    return [];
+  }
+};
+
+// 3. Obtener Tasa de Respuesta (Cálculo aproximado de chats activos)
+export const calcularTasaRespuestaPostulante = async (postulanteId: string) => {
+  try {
+    const chatsRef = collection(db, "chats");
+    const q = query(chatsRef, where("participantes", "array-contains", postulanteId));
+    const querySnapshot = await getDocs(q);
+    
+    let totalChatsActivados = 0;
+    let chatsRespondidosPorMi = 0;
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      // Si el chat pasó de "pendiente" a "activo", significa que el empleador inició la conversación
+      if (data.estado === 'activo') {
+        totalChatsActivados++;
+        // Si mis no leídos son 0 y el chat está activo, asumimos que he leído/respondido
+        if (data.noLeidos && data.noLeidos[postulanteId] === 0) {
+          chatsRespondidosPorMi++;
+        }
+      }
+    });
+
+    if (totalChatsActivados === 0) return 0; // Si nadie te ha hablado, 0%
+    return Math.round((chatsRespondidosPorMi / totalChatsActivados) * 100);
+  } catch (error) {
+    console.error("Error al calcular tasa de respuesta:", error);
+    return 0;
+  }
+};
+
+/*==================================================
+ FUNCIONALIDADES PARA EL DASHBOARD DEL EMPLEADOR
+==================================================*/
+
+// 1. Calcular Tasa de Respuesta del Empleador
+export const calcularTasaRespuestaEmpleador = async (empleadorId: string) => {
+  try {
+    const chatsRef = collection(db, "chats");
+    const q = query(chatsRef, where("participantes", "array-contains", empleadorId));
+    const querySnapshot = await getDocs(q);
+    
+    let totalChatsActivos = 0;
+    let chatsRespondidosPorMi = 0;
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.estado === 'activo') {
+        totalChatsActivos++;
+        // Si no tengo mensajes sin leer, significa que estoy al día
+        if (data.noLeidos && data.noLeidos[empleadorId] === 0) {
+          chatsRespondidosPorMi++;
+        }
+      }
+    });
+
+    if (totalChatsActivos === 0) return 100; // Si no hay chats, estás al 100% por defecto
+    return Math.round((chatsRespondidosPorMi / totalChatsActivos) * 100);
+  } catch (error) {
+    console.error("Error al calcular tasa de respuesta:", error);
+    return 100;
+  }
+};
+
+// 2. Obtener Top 3 Candidatos Destacados
+export const obtenerCandidatosDestacados = async (empleadorId: string) => {
+  try {
+    // Primero, obtenemos todos los que han postulado a las vacantes de este empleador
+    const postulacionesRef = collection(db, "postulaciones");
+    const q = query(postulacionesRef, where("empleadorId", "==", empleadorId));
+    const querySnapshot = await getDocs(q);
+    
+    const candidatosUnicos = new Set<string>();
+    const candidatosBasicos: any[] = [];
+
+    // Guardamos los IDs únicos y datos básicos
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.postulanteId && !candidatosUnicos.has(data.postulanteId)) {
+        candidatosUnicos.add(data.postulanteId);
+        candidatosBasicos.push({
+          postulanteId: data.postulanteId,
+          nombre: data.nombreCandidato || 'Candidato',
+          puesto: data.cargoPostulado || 'Postulante',
+          compatibilidad: Math.floor(Math.random() * (95 - 75 + 1) + 75) // Simulación rápida de matching por ahora
+        });
+      }
+    });
+
+    // Ahora buscamos la calificación de cada candidato
+    const candidatosConEstadisticas = await Promise.all(
+      candidatosBasicos.map(async (candidato) => {
+        const califRef = collection(db, "calificaciones");
+        const qCalif = query(
+          califRef, 
+          where("postulanteId", "==", candidato.postulanteId),
+          where("tipo", "==", "empresa_a_postulante")
+        );
+        const califSnapshot = await getDocs(qCalif);
+        
+        let suma = 0;
+        let total = califSnapshot.size;
+        
+        califSnapshot.forEach(doc => {
+          suma += Number(doc.data().puntaje) || 0;
+        });
+
+        const calificacion = total > 0 ? (suma / total) : 0;
+
+        // Buscamos experiencia en su perfil
+        let experiencia = '0 años';
+        try {
+          const userDoc = await getDoc(doc(db, "usuarios", candidato.postulanteId));
+          if (userDoc.exists()) {
+             const userData = userDoc.data();
+             if (userData.experiencias && userData.experiencias.length > 0) {
+                experiencia = `${userData.experiencias.length} empleos`;
+             }
+          }
+        } catch(e) {}
+
+        return {
+          ...candidato,
+          calificacion: Number(calificacion.toFixed(1)),
+          totalOpiniones: total,
+          experiencia
+        };
+      })
+    );
+
+    // Ordenamos: Primero por calificación, luego por cantidad de opiniones para desempatar
+    return candidatosConEstadisticas
+      .sort((a, b) => {
+        if (b.calificacion !== a.calificacion) return b.calificacion - a.calificacion;
+        return b.totalOpiniones - a.totalOpiniones;
+      })
+      .slice(0, 3);
+
+  } catch (error) {
+    console.error("Error al obtener candidatos destacados:", error);
+    return [];
   }
 };
