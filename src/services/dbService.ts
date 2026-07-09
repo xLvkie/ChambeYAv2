@@ -59,27 +59,21 @@ export const actualizarPerfilUsuario = async (uid: string, datosNuevos: any) => 
  FUNCIONALIDADES DE VACANTES
 ============================*/ 
 
-// Función para crear una nueva vacante
 export const crearVacante = async (datosVacante: any) => {
   try {
-    // Apuntamos a la colección "vacantes" (Firebase la creará automáticamente si no existe)
     const vacantesRef = collection(db, "vacantes");
-    
-    // addDoc crea un nuevo documento con un ID único autogenerado
     const docRef = await addDoc(vacantesRef, {
       ...datosVacante,
-      estado: 'activa', // Toda vacante nueva nace como 'activa'
-      fechaCreacion: serverTimestamp() // Registra la hora exacta del servidor de Google
+      estado: 'activa',
+      fechaCreacion: serverTimestamp() 
     });
-    
-    return docRef.id; // Devolvemos el ID por si necesitamos redirigir al usuario a la vista de la vacante
+    return docRef.id; 
   } catch (error) {
     console.error("Error al crear la vacante:", error);
     throw error;
   }
 };
 
-// Función para traer solo las vacantes de un empleador en específico
 export const obtenerVacantesPorEmpleador = async (empleadorId: string) => {
   try {
     const vacantesRef = collection(db, "vacantes");
@@ -99,7 +93,6 @@ export const obtenerVacantesPorEmpleador = async (empleadorId: string) => {
   }
 };
 
-// Función para actualizar cualquier dato de una vacante (como su estado)
 export const actualizarVacante = async (vacanteId: string, datosActualizados: any) => {
   try {
     const vacanteRef = doc(db, "vacantes", vacanteId);
@@ -110,7 +103,6 @@ export const actualizarVacante = async (vacanteId: string, datosActualizados: an
   }
 };
 
-// Función para obtener una sola vacante por su ID
 export const obtenerVacantePorId = async (id: string) => {
   try {
     const docRef = doc(db, "vacantes", id);
@@ -305,11 +297,9 @@ export const obtenerCalificacionesPostulante = async (postulanteId: string): Pro
  FUNCIONALIDADES DEl BUSCADOR DE VACANTES
 ========================================*/ 
 
-// Función para traer todas las vacantes activas de la plataforma 
 export const obtenerTodasLasVacantesActivas = async () => {
   try {
     const vacantesRef = collection(db, "vacantes");
-    // Buscamos solo las que el empleador tiene como "activa"
     const q = query(vacantesRef, where("estado", "==", "activa"));
     
     const querySnapshot = await getDocs(q);
@@ -319,7 +309,6 @@ export const obtenerTodasLasVacantesActivas = async () => {
       vacantes.push({ id: doc.id, ...doc.data() });
     });
     
-    // Las ordenamos para que las más recientes salgan primero
     return vacantes.sort((a, b) => {
       const timeA = a.fechaCreacion?.toMillis() || 0;
       const timeB = b.fechaCreacion?.toMillis() || 0;
@@ -335,12 +324,10 @@ export const obtenerTodasLasVacantesActivas = async () => {
  FUNCIONALIDADES DE RECUENTO DE DATOS DE LAS VACANTES Y DETALLE VACANTE
 =====================================================================*/ 
 
-// 1. Vistas únicas
 export const registrarVistaVacante = async (vacanteId: string, userId: string) => {
   try {
     if (!userId) return;
     const vacanteRef = doc(db, "vacantes", vacanteId);
-    // arrayUnion añade el ID solo si no existe en la lista
     await updateDoc(vacanteRef, {
       vistasUnicas: arrayUnion(userId)
     });
@@ -349,7 +336,6 @@ export const registrarVistaVacante = async (vacanteId: string, userId: string) =
   }
 };
 
-// 2. Postulaciones únicas
 export const registrarPostulacion = async (vacanteId: string, userId: string) => {
   try {
     if (!userId) return;
@@ -362,10 +348,8 @@ export const registrarPostulacion = async (vacanteId: string, userId: string) =>
   }
 };
 
-// 3. Buscar perfil extra del empleador (para el RUC y Tamaño)
 export const obtenerPerfilUsuario = async (userId: string) => {
   try {
-    // Busca en la colección donde guardas a los usuarios (asumo "usuarios")
     const docRef = doc(db, "usuarios", userId); 
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) return docSnap.data();
@@ -380,7 +364,6 @@ export const obtenerPerfilUsuario = async (userId: string) => {
  FUNCIONALIDADES DE GESTIÓN DE CANDIDATOS
 =======================================*/ 
 
-// 1. Función para obtener todas las postulaciones dirigidas a un empleador específico
 export const obtenerPostulacionesPorEmpleador = async (empleadorId: string) => {
   try {
     const postulacionesRef = collection(db, "postulaciones");
@@ -399,7 +382,6 @@ export const obtenerPostulacionesPorEmpleador = async (empleadorId: string) => {
   }
 };
 
-// 2. Función para actualizar el estado del candidato en el embudo
 export const actualizarEstadoPostulacion = async (postulacionId: string, nuevoEstado: string) => {
   try {
     const docRef = doc(db, "postulaciones", postulacionId);
@@ -410,11 +392,10 @@ export const actualizarEstadoPostulacion = async (postulacionId: string, nuevoEs
   }
 };
 
-// 3. Función para registrar una postulación real (cuando un candidato aplica a una vacante)
 export const registrarPostulacionReal = async (datosPostulacion: any) => {
   try {
     const postRef = collection(db, "postulaciones");
-    await addDoc(postRef, {
+    const docRef = await addDoc(postRef, {
       ...datosPostulacion,
       estado: 'Nuevo', 
       fecha: serverTimestamp()
@@ -422,6 +403,9 @@ export const registrarPostulacionReal = async (datosPostulacion: any) => {
 
     await registrarPostulacion(datosPostulacion.vacanteId, datosPostulacion.postulanteId);
     
+    // === NUEVO: INICIAR EL CHAT EN ESTADO PENDIENTE ===
+    await iniciarChatPostulacion(datosPostulacion);
+
     return true;
   } catch (error) {
     console.error("Error al postular:", error);
@@ -430,15 +414,127 @@ export const registrarPostulacionReal = async (datosPostulacion: any) => {
 };
 
 /*=======================================
- FUNCIONALIDADES DEl PERFIL DEL CANDIDATO
+ FUNCIONALIDADES DEL PERFIL DEL CANDIDATO
 ========================================*/ 
 
-// 1. Función para cambiar el estado de la postulación
-
-// 2. Función para obtener el documento de postulación (donde está el estado)
 export const obtenerPostulacion = async (postulacionId: string) => {
   const docSnap = await getDoc(doc(db, "postulaciones", postulacionId));
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
 };
 
 
+
+
+/*=======================================
+ FUNCIONALIDADES DE MENSAJERÍA (CHATS)
+========================================*/ 
+
+// 1. Inicia el chat bloqueado cuando el candidato postula
+export const iniciarChatPostulacion = async (datosPostulacion: any) => {
+  try {
+    const mensajeInicial = `Hola, he postulado a la vacante de ${datosPostulacion.cargoPostulado}. ¡Espero su pronta respuesta!`;
+    
+    // Creamos la sala de chat
+    const chatRef = collection(db, "chats");
+    const nuevoChat = await addDoc(chatRef, {
+      participantes: [datosPostulacion.empleadorId, datosPostulacion.postulanteId],
+      vacanteId: datosPostulacion.vacanteId,
+      estado: 'pendiente', // Bloqueado para el postulante
+      ultimoMensaje: mensajeInicial,
+      fechaActualizacion: serverTimestamp()
+    });
+
+    // Guardamos el primer mensaje en la subcolección/colección de mensajes
+    const mensajesRef = collection(db, "mensajes");
+    await addDoc(mensajesRef, {
+      chatId: nuevoChat.id,
+      remitenteId: datosPostulacion.postulanteId,
+      texto: mensajeInicial,
+      fecha: serverTimestamp()
+    });
+
+    return nuevoChat.id;
+  } catch (error) {
+    console.error("Error al iniciar chat de postulación:", error);
+    throw error;
+  }
+};
+
+// 2. Desbloquea el chat cuando el empleador da clic en "Contactar"
+export const activarChatEmpleador = async (chatId: string, empleadorId: string) => {
+  try {
+    const mensajeActivacion = "¡Hola! Hemos revisado tu perfil y nos gustaría conversar contigo sobre la vacante.";
+
+    // Actualizamos el estado del chat a 'activo'
+    const chatRef = doc(db, "chats", chatId);
+    await updateDoc(chatRef, {
+      estado: 'activo',
+      ultimoMensaje: mensajeActivacion,
+      fechaActualizacion: serverTimestamp()
+    });
+
+    // Agregamos el mensaje del empleador
+    const mensajesRef = collection(db, "mensajes");
+    await addDoc(mensajesRef, {
+      chatId: chatId,
+      remitenteId: empleadorId,
+      texto: mensajeActivacion,
+      fecha: serverTimestamp()
+    });
+
+  } catch (error) {
+    console.error("Error al activar chat:", error);
+    throw error;
+  }
+};
+
+// 3. Enviar un mensaje normal (solo funcionará si el chat está activo)
+export const enviarMensaje = async (chatId: string, remitenteId: string, texto: string) => {
+  try {
+    const mensajesRef = collection(db, "mensajes");
+    await addDoc(mensajesRef, {
+      chatId,
+      remitenteId,
+      texto,
+      fecha: serverTimestamp()
+    });
+
+    // Actualizamos el último mensaje en la sala para la lista lateral
+    const chatRef = doc(db, "chats", chatId);
+    await updateDoc(chatRef, {
+      ultimoMensaje: texto,
+      fechaActualizacion: serverTimestamp()
+    });
+
+  } catch (error) {
+    console.error("Error al enviar mensaje:", error);
+    throw error;
+  }
+};
+
+// 4. Buscar una sala de chat específica entre dos usuarios para una vacante (Para evitar duplicados)
+export const obtenerChatEspecifico = async (empleadorId: string, postulanteId: string, vacanteId: string) => {
+  try {
+    const chatsRef = collection(db, "chats");
+    const q = query(chatsRef, 
+      where("participantes", "array-contains", postulanteId),
+      where("vacanteId", "==", vacanteId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    let chatEncontrado = null;
+
+    // Filtramos manualmente para asegurar que el empleador también esté
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.participantes.includes(empleadorId)) {
+        chatEncontrado = { id: doc.id, ...data };
+      }
+    });
+
+    return chatEncontrado;
+  } catch (error) {
+    console.error("Error al buscar chat específico:", error);
+    return null;
+  }
+};
