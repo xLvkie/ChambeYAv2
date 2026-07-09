@@ -48,12 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Este observador vigila si el usuario entra, sale o recarga la página
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       
       if (user) {
-        // Si hay usuario, traemos sus datos de Firestore (su rol y estado del perfil)
+        // Si hay usuario, traemos sus datos de Firestore 
         const docRef = doc(db, 'usuarios', user.uid);
         const docSnap = await getDoc(docRef);
         
@@ -63,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUserData(null);
       }
-      setLoading(false); // Ya terminamos de cargar
+      setLoading(false); 
     });
 
     return unsubscribe;

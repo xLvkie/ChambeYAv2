@@ -24,7 +24,6 @@ export default function RutaProtegida({ rolPermitido }: RutaProtegidaProps) {
     return <Navigate to="/selector" />;
   }
 
-  // 4. ¡LA MAGIA DEL ONBOARDING FORZADO!
   // Si no ha completado su perfil, revisamos en qué página está.
   // Si no está en la página de editar perfil, lo obligamos a ir hacia allá.
   if (!userData.perfilCompleto) {
@@ -39,6 +38,6 @@ export default function RutaProtegida({ rolPermitido }: RutaProtegidaProps) {
     }
   }
 
-  // Si pasa todas las validaciones de seguridad, lo dejamos ver la página solicitada (<Outlet />)
+  // Si pasa todas las validaciones de seguridad, lo dejamos ver la página solicitada 
   return <Outlet />;
 }

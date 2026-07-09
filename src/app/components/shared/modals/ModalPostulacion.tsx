@@ -16,9 +16,9 @@ export default function ModalPostulacion({ isOpen, onClose, cargo, empresa }: Mo
   // Efecto para simular el tiempo de análisis de la IA cuando se abre el modal
   useEffect(() => {
     if (isOpen) {
-      setPaso(1); // Siempre empezamos en el paso 1
+      setPaso(1); 
       const timer = setTimeout(() => {
-        setPaso(2); // Pasamos al paso 2 después de 2.5 segundos
+        setPaso(2);
       }, 2500);
       return () => clearTimeout(timer);
     }
@@ -46,7 +46,7 @@ export default function ModalPostulacion({ isOpen, onClose, cargo, empresa }: Mo
         <div className="p-6 sm:p-8">
           
           {/* ====================================================
-              PASO 1: Analizando Compatibilidad (Simulación IA)
+              PASO 1: Analizando Compatibilidad 
               ==================================================== */}
           {paso === 1 && (
             <div className="text-center py-8">
