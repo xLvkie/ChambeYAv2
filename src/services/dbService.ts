@@ -232,7 +232,11 @@ export const iniciarChatPostulacion = async (datosPostulacion: any) => {
       vacanteId: datosPostulacion.vacanteId,
       estado: 'pendiente', // Bloqueado para el postulante
       ultimoMensaje: mensajeInicial,
-      fechaActualizacion: serverTimestamp()
+      fechaActualizacion: serverTimestamp(),
+      noLeidos: {
+        [datosPostulacion.empleadorId]: 1,
+        [datosPostulacion.postulanteId]: 0
+      }
     });
 
     // Guardamos el primer mensaje en la subcolección/colección de mensajes
@@ -280,7 +284,7 @@ export const activarChatEmpleador = async (chatId: string, empleadorId: string) 
 };
 
 // 3. Enviar un mensaje normal (solo funcionará si el chat está activo)
-export const enviarMensaje = async (chatId: string, remitenteId: string, texto: string) => {
+export const enviarMensaje = async (chatId: string, remitenteId: string, receptorId: string, texto: string) => {
   try {
     const mensajesRef = collection(db, "mensajes");
     await addDoc(mensajesRef, {
@@ -290,11 +294,12 @@ export const enviarMensaje = async (chatId: string, remitenteId: string, texto: 
       fecha: serverTimestamp()
     });
 
-    // Actualizamos el último mensaje en la sala para la lista lateral
     const chatRef = doc(db, "chats", chatId);
     await updateDoc(chatRef, {
       ultimoMensaje: texto,
-      fechaActualizacion: serverTimestamp()
+      fechaActualizacion: serverTimestamp(),
+      // Usamos increment(1) para sumar 1 al contador del receptor dinámicamente
+      [`noLeidos.${receptorId}`]: increment(1)
     });
 
   } catch (error) {
@@ -327,5 +332,17 @@ export const obtenerChatEspecifico = async (empleadorId: string, postulanteId: s
   } catch (error) {
     console.error("Error al buscar chat específico:", error);
     return null;
+  }
+};
+
+// 5. Función para reiniciar el contador a 0 cuando el usuario entra al chat
+export const marcarComoLeido = async (chatId: string, userId: string) => {
+  try {
+    const chatRef = doc(db, "chats", chatId);
+    await updateDoc(chatRef, {
+      [`noLeidos.${userId}`]: 0
+    });
+  } catch (error) {
+    console.error("Error al marcar como leído:", error);
   }
 };

@@ -4,7 +4,7 @@ import { Search, Send, Paperclip, MoreVertical, ChevronLeft, MessageSquare } fro
 import { useAuth } from '../../../context/AuthContext';
 import { db } from '../../../services/firebase';
 import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
-import { enviarMensaje, activarChatEmpleador } from '../../../services/dbService';
+import { enviarMensaje, activarChatEmpleador, marcarComoLeido } from '../../../services/dbService';
 import { useParams } from 'react-router-dom'; // Para capturar el ID si venimos de PerfilCandidato
 
 export default function ChatEmpresarial() {
@@ -79,18 +79,29 @@ export default function ChatEmpresarial() {
   useEffect(() => {
     if (!conversacionActiva?.id) return;
 
+    // Quitamos el orderBy de Firebase para evitar el error de Índice Compuesto
     const q = query(
       collection(db, 'mensajes'),
-      where('chatId', '==', conversacionActiva.id),
-      orderBy('fecha', 'asc') // Asegura que los más antiguos salgan arriba
+      where('chatId', '==', conversacionActiva.id)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msjs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Ordenamos los mensajes cronológicamente usando JavaScript
+      msjs.sort((a: any, b: any) => {
+        // Usamos un fallback a Date.now() en caso de que serverTimestamp() aún esté procesándose
+        const timeA = a.fecha?.toMillis ? a.fecha.toMillis() : Date.now();
+        const timeB = b.fecha?.toMillis ? b.fecha.toMillis() : Date.now();
+        return timeA - timeB;
+      });
+
       setMensajes(msjs);
       
-      // Auto-scroll al fondo cuando llegan mensajes
+      // Auto-scroll al fondo
       setTimeout(() => mensajesFinRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }, (error) => {
+      console.error("Error al escuchar los mensajes:", error);
     });
 
     return () => unsubscribe();
@@ -106,7 +117,7 @@ export default function ChatEmpresarial() {
       const texto = mensajeInput.trim();
       setMensajeInput(''); // Limpiamos el input rápido para mejor UX
       
-      await enviarMensaje(conversacionActiva.id, currentUser.uid, texto);
+      await enviarMensaje(conversacionActiva.id, currentUser.uid, conversacionActiva.postulanteId, texto);
       
       // Si el chat estaba pendiente y el empleador envía un mensaje manual, lo activamos
       if (conversacionActiva.estado === 'pendiente') {
@@ -117,9 +128,13 @@ export default function ChatEmpresarial() {
     }
   };
 
-  const handleSeleccionarConversacion = (conv: any) => {
+  const handleSeleccionarConversacion = async (conv: any) => {
     setConversacionActiva(conv);
     setMostrarChatMobile(true);
+
+    if (conv.noLeidos && conv.noLeidos[currentUser?.uid || ''] > 0) {
+      await marcarComoLeido(conv.id, currentUser!.uid);
+    }
   };
 
   // Función de ayuda para formatear la hora (ej: "10:30 AM")
@@ -156,7 +171,7 @@ export default function ChatEmpresarial() {
               />
             </div>
           </div>
-
+          {/* Lista de conversaciones */}
           <div className="flex-1 overflow-y-auto hide-scrollbar bg-white">
             {conversacionesFiltradas.length > 0 ? (
               conversacionesFiltradas.map((conv) => (
@@ -187,9 +202,19 @@ export default function ChatEmpresarial() {
                         <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full mb-1 inline-block">Bloqueado</span>
                       )}
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs truncate text-muted-foreground">
+                        <p className={`text-xs truncate ${
+                          (conv.noLeidos && conv.noLeidos[currentUser?.uid || ''] > 0) 
+                            ? 'font-bold text-gray-900' 
+                            : 'text-muted-foreground'
+                        }`}>
                           {conv.ultimoMensaje || 'Sin mensajes'}
                         </p>
+                        
+                        {(conv.noLeidos && conv.noLeidos[currentUser?.uid || ''] > 0) && (
+                          <span className="shrink-0 bg-[#FF8C00] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                            {conv.noLeidos[currentUser!.uid]}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
